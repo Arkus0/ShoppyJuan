@@ -34,7 +34,18 @@ fun PriceComparisonScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Comparador de Precios") },
+                title = {
+                    Column {
+                        Text("Comparador de Precios")
+                        if (uiState.listName.isNotEmpty()) {
+                            Text(
+                                text = uiState.listName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, "Volver")
@@ -73,6 +84,19 @@ fun PriceComparisonScreen(
             }
 
             when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Cargando lista...")
+                        }
+                    }
+                }
+
                 uiState.isAnalyzing -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -86,13 +110,40 @@ fun PriceComparisonScreen(
                     }
                 }
 
+                uiState.items.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Lista vacia",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Anade productos a la lista para comparar precios",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+
                 uiState.analysisResult == null -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Selecciona una lista para analizar precios",
+                            text = "No hay datos de precios disponibles",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

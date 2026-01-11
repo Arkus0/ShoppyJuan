@@ -67,6 +67,20 @@ fun ListDetailScreen(
                     }
                 },
                 actions = {
+                    // Price comparison button
+                    uiState.list?.id?.let { listId ->
+                        IconButton(
+                            onClick = {
+                                navController.navigate(Screen.PriceComparison.createRoute(listId))
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Euro,
+                                contentDescription = "Comparar precios"
+                            )
+                        }
+                    }
+
                     // Supermarket mode button
                     uiState.list?.id?.let { listId ->
                         IconButton(

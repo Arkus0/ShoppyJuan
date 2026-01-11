@@ -1,6 +1,9 @@
 package com.arkus.shoppyjuan.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -10,6 +13,8 @@ import com.arkus.shoppyjuan.presentation.auth.AuthScreen
 import com.arkus.shoppyjuan.presentation.favorites.FavoritesScreen
 import com.arkus.shoppyjuan.presentation.home.HomeScreen
 import com.arkus.shoppyjuan.presentation.listdetail.ListDetailScreen
+import com.arkus.shoppyjuan.presentation.prices.PriceComparisonScreen
+import com.arkus.shoppyjuan.presentation.prices.PriceComparisonViewModel
 import com.arkus.shoppyjuan.presentation.profile.ProfileScreen
 import com.arkus.shoppyjuan.presentation.recipedetail.RecipeDetailScreen
 import com.arkus.shoppyjuan.presentation.recipes.RecipesScreen
@@ -23,6 +28,9 @@ sealed class Screen(val route: String) {
     }
     object SupermarketMode : Screen("supermarket/{listId}") {
         fun createRoute(listId: String) = "supermarket/$listId"
+    }
+    object PriceComparison : Screen("prices/{listId}") {
+        fun createRoute(listId: String) = "prices/$listId"
     }
     object Recipes : Screen("recipes")
     object RecipeDetail : Screen("recipe/{recipeId}") {
@@ -69,6 +77,24 @@ fun AppNavigation(
             )
         ) {
             SupermarketModeScreen(navController)
+        }
+
+        // Price Comparison
+        composable(
+            route = Screen.PriceComparison.route,
+            arguments = listOf(
+                navArgument("listId") { type = NavType.StringType }
+            )
+        ) {
+            val viewModel: PriceComparisonViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsState()
+
+            PriceComparisonScreen(
+                uiState = uiState,
+                onViewModeChange = viewModel::setViewMode,
+                onVerifyPrice = viewModel::verifyPrice,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         // Recipes
