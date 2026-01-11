@@ -1,6 +1,8 @@
 package com.arkus.shoppyjuan.data.repository
 
 import com.arkus.shoppyjuan.data.local.dao.RecipeDao
+import com.arkus.shoppyjuan.data.remote.api.MealDbApi
+import com.arkus.shoppyjuan.data.remote.mapper.toRecipe
 import com.arkus.shoppyjuan.domain.model.Recipe
 import com.arkus.shoppyjuan.domain.model.toDomain
 import com.arkus.shoppyjuan.domain.model.toEntity
@@ -10,7 +12,8 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class RecipeRepositoryImpl @Inject constructor(
-    private val recipeDao: RecipeDao
+    private val recipeDao: RecipeDao,
+    private val mealDbApi: MealDbApi
 ) : RecipeRepository {
 
     override fun getAllRecipes(): Flow<List<Recipe>> {
@@ -48,7 +51,29 @@ class RecipeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun searchRecipesOnline(query: String): List<Recipe> {
-        // TODO: Implement TheMealDB API integration
-        return emptyList()
+        return try {
+            val response = mealDbApi.searchMeals(query)
+            response.meals?.map { it.toRecipe() } ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun getRandomRecipe(): Recipe? {
+        return try {
+            val response = mealDbApi.getRandomMeal()
+            response.meals?.firstOrNull()?.toRecipe()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun getRecipeDetailsById(recipeId: String): Recipe? {
+        return try {
+            val response = mealDbApi.getMealById(recipeId)
+            response.meals?.firstOrNull()?.toRecipe()
+        } catch (e: Exception) {
+            null
+        }
     }
 }
