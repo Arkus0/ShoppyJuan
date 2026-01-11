@@ -12,4 +12,5 @@ interface RecipeRepository {
     suspend fun deleteRecipe(recipeId: String)
     suspend fun toggleFavorite(recipeId: String, isFavorite: Boolean)
     suspend fun searchRecipesOnline(query: String): List<Recipe>
+    suspend fun exportIngredientsToList(recipeId: String, listId: String, multiplier: Int = 1)
 }

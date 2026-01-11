@@ -3,9 +3,12 @@ package com.arkus.shoppyjuan.presentation.listdetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.arkus.shoppyjuan.data.barcode.BarcodeScannerManager
+import com.arkus.shoppyjuan.data.speech.VoiceInputManager
 import com.arkus.shoppyjuan.domain.model.ListItem
 import com.arkus.shoppyjuan.domain.model.ShoppingList
 import com.arkus.shoppyjuan.domain.repository.ShoppingListRepository
+import com.arkus.shoppyjuan.domain.util.ProductCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -24,6 +27,8 @@ data class ListDetailUiState(
 @HiltViewModel
 class ListDetailViewModel @Inject constructor(
     private val repository: ShoppingListRepository,
+    val voiceInputManager: VoiceInputManager,
+    val barcodeScannerManager: BarcodeScannerManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -91,13 +96,18 @@ class ListDetailViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
+                // Detect category and emoji automatically
+                val detectedCategory = ProductCategory.detectCategory(name)
+                val emoji = detectedCategory.emoji
+
                 val item = ListItem(
                     id = UUID.randomUUID().toString(),
                     listId = listId,
                     name = name,
                     quantity = quantity,
                     unit = unit,
-                    category = category,
+                    category = category ?: detectedCategory.label,
+                    emoji = emoji,
                     position = _uiState.value.items.size
                 )
                 repository.addItem(item)

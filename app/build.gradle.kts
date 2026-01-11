@@ -143,6 +143,9 @@ dependencies {
     // Accompanist (for permissions)
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
+    // QR Code generation
+    implementation("com.google.zxing:core:3.5.2")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

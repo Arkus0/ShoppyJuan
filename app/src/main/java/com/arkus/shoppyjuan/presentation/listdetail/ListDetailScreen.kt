@@ -9,12 +9,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.arkus.shoppyjuan.data.barcode.BarcodeScannerManager
+import com.arkus.shoppyjuan.data.speech.VoiceInputManager
+import com.arkus.shoppyjuan.data.speech.VoiceInputState
 import com.arkus.shoppyjuan.domain.model.ListItem
+import com.arkus.shoppyjuan.presentation.components.BarcodeScannerScreen
+import com.arkus.shoppyjuan.presentation.components.VoiceInputButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,64 +218,125 @@ fun ItemCard(
 @Composable
 fun AddItemDialog(
     onDismiss: () -> Unit,
-    onAdd: (String, Double, String?) -> Unit
+    onAdd: (String, Double, String?) -> Unit,
+    voiceInputManager: VoiceInputManager = hiltViewModel<ListDetailViewModel>().voiceInputManager,
+    barcodeScannerManager: BarcodeScannerManager = hiltViewModel<ListDetailViewModel>().barcodeScannerManager
 ) {
     var itemName by remember { mutableStateOf("") }
     var quantity by remember { mutableStateOf("1") }
     var unit by remember { mutableStateOf("") }
+    var showBarcodeScanner by remember { mutableStateOf(false) }
+    var voiceInputState by remember { mutableStateOf<VoiceInputState>(VoiceInputState.Idle) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Añadir Artículo") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = itemName,
-                    onValueChange = { itemName = it },
-                    label = { Text("Nombre del artículo") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+    if (showBarcodeScanner) {
+        BarcodeScannerScreen(
+            scannerManager = barcodeScannerManager,
+            onBarcodeScanned = { barcode ->
+                itemName = barcode
+                showBarcodeScanner = false
+            },
+            onClose = { showBarcodeScanner = false }
+        )
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Añadir Artículo") },
+            text = {
+                Column {
+                    // Input field con iconos de voz y barcode
+                    OutlinedTextField(
+                        value = itemName,
+                        onValueChange = { itemName = it },
+                        label = { Text("Nombre del artículo") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = {
+                            Row {
+                                // Voice input button
+                                IconButton(
+                                    onClick = {
+                                        voiceInputState = VoiceInputState.Listening
+                                        LaunchedEffect(Unit) {
+                                            voiceInputManager.startListening().collect { state ->
+                                                voiceInputState = state
+                                                if (state is VoiceInputState.Result) {
+                                                    itemName = state.text
+                                                }
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Mic,
+                                        contentDescription = "Entrada por voz",
+                                        tint = if (voiceInputState is VoiceInputState.Listening)
+                                            MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                // Barcode scanner button
+                                IconButton(onClick = { showBarcodeScanner = true }) {
+                                    Icon(
+                                        Icons.Default.QrCodeScanner,
+                                        contentDescription = "Escanear código"
+                                    )
+                                }
+                            }
+                        }
+                    )
+
+                    if (voiceInputState is VoiceInputState.Listening) {
+                        Text(
+                            text = "Escuchando...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = quantity,
+                            onValueChange = { quantity = it },
+                            label = { Text("Cantidad") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = unit,
+                            onValueChange = { unit = it },
+                            label = { Text("Unidad") },
+                            placeholder = { Text("kg, ud, l...") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (itemName.isNotBlank()) {
+                            val qty = quantity.toDoubleOrNull() ?: 1.0
+                            val unitValue = if (unit.isBlank()) null else unit
+                            onAdd(itemName, qty, unitValue)
+                        }
+                    },
+                    enabled = itemName.isNotBlank()
                 ) {
-                    OutlinedTextField(
-                        value = quantity,
-                        onValueChange = { quantity = it },
-                        label = { Text("Cantidad") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = unit,
-                        onValueChange = { unit = it },
-                        label = { Text("Unidad") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Text("Añadir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancelar")
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (itemName.isNotBlank()) {
-                        val qty = quantity.toDoubleOrNull() ?: 1.0
-                        val unitValue = if (unit.isBlank()) null else unit
-                        onAdd(itemName, qty, unitValue)
-                    }
-                },
-                enabled = itemName.isNotBlank()
-            ) {
-                Text("Añadir")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
+        )
+    }
 }

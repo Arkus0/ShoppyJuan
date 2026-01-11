@@ -91,7 +91,8 @@ fun ListsScreen(
                                     )
                                 },
                                 onDelete = { viewModel.deleteList(list.id) },
-                                onArchive = { viewModel.archiveList(list.id) }
+                                onArchive = { viewModel.archiveList(list.id) },
+                                onShare = { viewModel.showShareDialog(list) }
                             )
                         }
                     }
@@ -116,7 +117,8 @@ fun ListCard(
     list: ShoppingList,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    onArchive: () -> Unit
+    onArchive: () -> Unit,
+    onShare: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -156,6 +158,14 @@ fun ListCard(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false }
             ) {
+                DropdownMenuItem(
+                    text = { Text("Compartir") },
+                    onClick = {
+                        onShare()
+                        showMenu = false
+                    },
+                    leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) }
+                )
                 DropdownMenuItem(
                     text = { Text("Archivar") },
                     onClick = {
