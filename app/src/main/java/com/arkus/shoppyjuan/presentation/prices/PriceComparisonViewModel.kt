@@ -29,7 +29,16 @@ data class PriceComparisonUiState(
     val recentPrices: List<PriceRecordEntity> = emptyList(),
     val error: String? = null,
     val uploadingReceipt: Boolean = false,
-    val receiptAnalysisProgress: String? = null
+    val receiptAnalysisProgress: String? = null,
+    // Open Prices integration
+    val isOpenPricesAuthenticated: Boolean = false,
+    val openPricesUsername: String? = null,
+    val openPricesPricesContributed: Int = 0,
+    val isContributing: Boolean = false,
+    val contributionProgress: String? = null,
+    val showOpenPricesLoginDialog: Boolean = false,
+    val showContributeDialog: Boolean = false,
+    val uncontributedReceiptsCount: Int = 0
 )
 
 enum class PriceViewMode {
@@ -59,6 +68,31 @@ class PriceComparisonViewModel @Inject constructor(
     init {
         loadUserReceipts()
         loadListAndAnalyze()
+        observeOpenPricesAuth()
+    }
+
+    /**
+     * Observe Open Prices authentication state
+     */
+    private fun observeOpenPricesAuth() {
+        viewModelScope.launch {
+            priceRepository.isOpenPricesAuthenticated.collect { isAuth ->
+                _uiState.update { it.copy(isOpenPricesAuthenticated = isAuth) }
+
+                if (isAuth) {
+                    // Load username and uncontributed count
+                    priceRepository.openPricesUsername.collect { username ->
+                        _uiState.update { it.copy(openPricesUsername = username) }
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            // Count uncontributed receipts
+            val count = priceRepository.getUncontributedReceipts(currentUserId).size
+            _uiState.update { it.copy(uncontributedReceiptsCount = count) }
+        }
     }
 
     /**
@@ -264,5 +298,165 @@ class PriceComparisonViewModel @Inject constructor(
      */
     fun clearError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    // ==================== OPEN PRICES INTEGRATION ====================
+
+    /**
+     * Show/hide Open Prices login dialog
+     */
+    fun showOpenPricesLogin(show: Boolean) {
+        _uiState.update { it.copy(showOpenPricesLoginDialog = show) }
+    }
+
+    /**
+     * Show/hide contribute dialog
+     */
+    fun showContributeDialog(show: Boolean) {
+        _uiState.update { it.copy(showContributeDialog = show) }
+    }
+
+    /**
+     * Login to Open Prices (Open Food Facts account)
+     */
+    fun loginToOpenPrices(username: String, password: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isContributing = true, contributionProgress = "Iniciando sesion...") }
+
+            val result = priceRepository.authenticateOpenPrices(username, password)
+
+            result.fold(
+                onSuccess = {
+                    _uiState.update {
+                        it.copy(
+                            isContributing = false,
+                            contributionProgress = null,
+                            showOpenPricesLoginDialog = false
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(
+                            isContributing = false,
+                            contributionProgress = null,
+                            error = "Error de autenticacion: ${e.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Logout from Open Prices
+     */
+    fun logoutFromOpenPrices() {
+        viewModelScope.launch {
+            priceRepository.logoutOpenPrices()
+            _uiState.update { it.copy(openPricesUsername = null) }
+        }
+    }
+
+    /**
+     * Contribute a single receipt's prices to Open Prices
+     */
+    fun contributeReceipt(receiptId: String) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isContributing = true, contributionProgress = "Compartiendo precios...")
+            }
+
+            val result = priceRepository.contributeReceiptPrices(
+                receiptId = receiptId,
+                uploadProof = true
+            )
+
+            result.fold(
+                onSuccess = { summary ->
+                    _uiState.update {
+                        it.copy(
+                            isContributing = false,
+                            contributionProgress = null,
+                            openPricesPricesContributed = it.openPricesPricesContributed + summary.successCount,
+                            uncontributedReceiptsCount = maxOf(0, it.uncontributedReceiptsCount - 1),
+                            error = if (summary.failCount > 0)
+                                "Compartidos ${summary.successCount} precios, ${summary.failCount} fallidos"
+                            else null
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(
+                            isContributing = false,
+                            contributionProgress = null,
+                            error = "Error al compartir: ${e.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Contribute all unshared receipts to Open Prices
+     */
+    fun contributeAllReceipts() {
+        viewModelScope.launch {
+            val uncontributedReceipts = priceRepository.getUncontributedReceipts(currentUserId)
+
+            if (uncontributedReceipts.isEmpty()) {
+                _uiState.update { it.copy(error = "No hay tickets pendientes de compartir") }
+                return@launch
+            }
+
+            _uiState.update {
+                it.copy(
+                    isContributing = true,
+                    contributionProgress = "Compartiendo ${uncontributedReceipts.size} tickets..."
+                )
+            }
+
+            var totalSuccess = 0
+            var totalFail = 0
+
+            uncontributedReceipts.forEachIndexed { index, receipt ->
+                _uiState.update {
+                    it.copy(
+                        contributionProgress = "Compartiendo ticket ${index + 1} de ${uncontributedReceipts.size}..."
+                    )
+                }
+
+                val result = priceRepository.contributeReceiptPrices(
+                    receiptId = receipt.id,
+                    uploadProof = true
+                )
+
+                result.fold(
+                    onSuccess = { summary ->
+                        totalSuccess += summary.successCount
+                        totalFail += summary.failCount
+                    },
+                    onFailure = {
+                        totalFail++
+                    }
+                )
+            }
+
+            _uiState.update {
+                it.copy(
+                    isContributing = false,
+                    contributionProgress = null,
+                    openPricesPricesContributed = it.openPricesPricesContributed + totalSuccess,
+                    uncontributedReceiptsCount = 0,
+                    showContributeDialog = false,
+                    error = if (totalFail > 0)
+                        "Compartidos $totalSuccess precios de ${uncontributedReceipts.size} tickets ($totalFail errores)"
+                    else
+                        "Compartidos $totalSuccess precios de ${uncontributedReceipts.size} tickets a Open Prices"
+                )
+            }
+        }
     }
 }

@@ -29,8 +29,39 @@ fun PriceComparisonScreen(
     uiState: PriceComparisonUiState,
     onViewModeChange: (PriceViewMode) -> Unit,
     onVerifyPrice: (String) -> Unit,
+    onShowOpenPricesLogin: (Boolean) -> Unit,
+    onShowContributeDialog: (Boolean) -> Unit,
+    onLoginToOpenPrices: (String, String) -> Unit,
+    onLogoutFromOpenPrices: () -> Unit,
+    onContributeAllReceipts: () -> Unit,
     onBack: () -> Unit
 ) {
+    // Show Open Prices login dialog
+    if (uiState.showOpenPricesLoginDialog) {
+        OpenPricesLoginDialog(
+            isLoading = uiState.isContributing,
+            error = uiState.error,
+            onLogin = onLoginToOpenPrices,
+            onDismiss = { onShowOpenPricesLogin(false) }
+        )
+    }
+
+    // Show contribute dialog
+    if (uiState.showContributeDialog) {
+        ContributeToOpenPricesDialog(
+            isAuthenticated = uiState.isOpenPricesAuthenticated,
+            username = uiState.openPricesUsername,
+            uncontributedCount = uiState.uncontributedReceiptsCount,
+            pricesContributed = uiState.openPricesPricesContributed,
+            isContributing = uiState.isContributing,
+            progress = uiState.contributionProgress,
+            onLogin = { onShowOpenPricesLogin(true) },
+            onLogout = onLogoutFromOpenPrices,
+            onContributeAll = onContributeAllReceipts,
+            onDismiss = { onShowContributeDialog(false) }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -49,6 +80,28 @@ fun PriceComparisonScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, "Volver")
+                    }
+                },
+                actions = {
+                    // Open Prices contribute button with badge
+                    BadgedBox(
+                        badge = {
+                            if (uiState.uncontributedReceiptsCount > 0) {
+                                Badge { Text(uiState.uncontributedReceiptsCount.toString()) }
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = { onShowContributeDialog(true) }) {
+                            Icon(
+                                Icons.Default.CloudUpload,
+                                contentDescription = "Compartir con Open Prices",
+                                tint = if (uiState.isOpenPricesAuthenticated) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
                     }
                 }
             )

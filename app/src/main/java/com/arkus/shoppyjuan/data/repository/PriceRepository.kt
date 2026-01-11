@@ -1,8 +1,13 @@
 package com.arkus.shoppyjuan.data.repository
 
+import android.net.Uri
 import com.arkus.shoppyjuan.data.local.dao.PriceDao
 import com.arkus.shoppyjuan.data.local.entity.*
+import com.arkus.shoppyjuan.data.remote.ContributionSummary
+import com.arkus.shoppyjuan.data.remote.OpenPricesContributor
 import com.arkus.shoppyjuan.data.remote.api.OpenPricesApi
+import com.arkus.shoppyjuan.data.remote.api.OpenPriceSubmissionResponse
+import com.arkus.shoppyjuan.data.remote.api.OpenUserStatsResponse
 import com.arkus.shoppyjuan.domain.util.FuzzySearch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +19,8 @@ import javax.inject.Singleton
 @Singleton
 class PriceRepository @Inject constructor(
     private val priceDao: PriceDao,
-    private val openPricesApi: OpenPricesApi
+    private val openPricesApi: OpenPricesApi,
+    private val openPricesContributor: OpenPricesContributor
 ) {
     // ==================== STORES ====================
 
@@ -245,5 +251,116 @@ class PriceRepository @Inject constructor(
     suspend fun cleanupOldPrices() = withContext(Dispatchers.IO) {
         val thirtyDaysAgo = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000)
         priceDao.deleteOldPrices(thirtyDaysAgo)
+    }
+
+    // ==================== OPEN PRICES CONTRIBUTION ====================
+
+    /**
+     * Check if user is authenticated with Open Prices
+     */
+    val isOpenPricesAuthenticated: Flow<Boolean> = openPricesContributor.isAuthenticated
+
+    /**
+     * Get Open Prices username
+     */
+    val openPricesUsername: Flow<String?> = openPricesContributor.username
+
+    /**
+     * Authenticate with Open Food Facts to contribute prices
+     */
+    suspend fun authenticateOpenPrices(username: String, password: String): Result<String> {
+        return openPricesContributor.authenticate(username, password)
+    }
+
+    /**
+     * Logout from Open Prices
+     */
+    suspend fun logoutOpenPrices() {
+        openPricesContributor.logout()
+    }
+
+    /**
+     * Contribute a single price to Open Prices
+     */
+    suspend fun contributePrice(
+        price: PriceRecordEntity,
+        locationOsmId: Long? = null,
+        locationOsmType: String? = null
+    ): Result<OpenPriceSubmissionResponse> {
+        val result = openPricesContributor.submitPrice(price, locationOsmId, locationOsmType)
+
+        // Mark as contributed locally
+        if (result.isSuccess) {
+            priceDao.updatePrice(price.copy(
+                contributedToOpenPrices = true,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+
+        return result
+    }
+
+    /**
+     * Contribute all prices from a receipt to Open Prices
+     */
+    suspend fun contributeReceiptPrices(
+        receiptId: String,
+        storeOsmId: Long? = null,
+        storeOsmType: String? = "NODE",
+        uploadProof: Boolean = true
+    ): Result<ContributionSummary> = withContext(Dispatchers.IO) {
+        val receipt = priceDao.getReceiptById(receiptId)
+            ?: return@withContext Result.failure(IllegalStateException("Receipt not found"))
+
+        val items = priceDao.getReceiptItems(receiptId)
+
+        // Upload receipt image as proof if requested
+        var proofId: Int? = null
+        if (uploadProof && receipt.imageUri != null) {
+            val proofResult = openPricesContributor.uploadReceiptProof(Uri.parse(receipt.imageUri))
+            proofId = proofResult.getOrNull()?.id
+        }
+
+        // Submit all prices
+        val result = openPricesContributor.submitReceiptPrices(
+            items = items,
+            receipt = receipt,
+            storeOsmId = storeOsmId,
+            storeOsmType = storeOsmType,
+            proofId = proofId
+        )
+
+        // Mark receipt as contributed
+        if (result.isSuccess) {
+            priceDao.updateReceipt(
+                receipt.copy(
+                    contributedToOpenPrices = true,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        }
+
+        result
+    }
+
+    /**
+     * Get user's Open Prices contribution stats
+     */
+    suspend fun getOpenPricesStats(): Result<OpenUserStatsResponse> {
+        return openPricesContributor.getUserStats()
+    }
+
+    /**
+     * Get receipts that haven't been contributed to Open Prices yet
+     */
+    suspend fun getUncontributedReceipts(userId: String): List<ReceiptEntity> = withContext(Dispatchers.IO) {
+        priceDao.getUncontributedReceipts(userId)
+    }
+
+    /**
+     * Get price records that haven't been contributed to Open Prices yet
+     */
+    suspend fun getUncontributedPrices(limit: Int = 50): List<PriceRecordEntity> = withContext(Dispatchers.IO) {
+        priceDao.getUncontributedPrices(limit)
     }
 }

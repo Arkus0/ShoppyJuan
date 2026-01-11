@@ -93,6 +93,11 @@ fun AppNavigation(
                 uiState = uiState,
                 onViewModeChange = viewModel::setViewMode,
                 onVerifyPrice = viewModel::verifyPrice,
+                onShowOpenPricesLogin = viewModel::showOpenPricesLogin,
+                onShowContributeDialog = viewModel::showContributeDialog,
+                onLoginToOpenPrices = viewModel::loginToOpenPrices,
+                onLogoutFromOpenPrices = viewModel::logoutFromOpenPrices,
+                onContributeAllReceipts = viewModel::contributeAllReceipts,
                 onBack = { navController.popBackStack() }
             )
         }

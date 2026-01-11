@@ -23,7 +23,7 @@ import com.arkus.shoppyjuan.data.local.entity.*
         ReceiptItemEntity::class,
         PriceContributorEntity::class
     ],
-    version = 6,
+    version = 7, // Added contributedToOpenPrices fields
     exportSchema = true
 )
 abstract class ShoppyDatabase : RoomDatabase() {

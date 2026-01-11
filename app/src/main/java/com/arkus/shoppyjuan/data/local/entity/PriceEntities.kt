@@ -69,7 +69,8 @@ data class PriceRecordEntity(
     val receiptId: String? = null, // If from receipt
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val validUntil: Long? = null // Price expiration (for offers)
+    val validUntil: Long? = null, // Price expiration (for offers)
+    val contributedToOpenPrices: Boolean = false // If shared to Open Prices API
 )
 
 /**
@@ -90,7 +91,9 @@ data class ReceiptEntity(
     val extractedItemsCount: Int = 0,
     val errorMessage: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val processedAt: Long? = null
+    val processedAt: Long? = null,
+    val updatedAt: Long = System.currentTimeMillis(),
+    val contributedToOpenPrices: Boolean = false // If shared to Open Prices API
 )
 
 @Serializable

@@ -93,6 +93,9 @@ interface PriceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPrices(prices: List<PriceRecordEntity>)
 
+    @Update
+    suspend fun updatePrice(price: PriceRecordEntity)
+
     @Query("""
         UPDATE price_records
         SET reportCount = reportCount + 1,
@@ -105,6 +108,15 @@ interface PriceDao {
     @Query("DELETE FROM price_records WHERE updatedAt < :before")
     suspend fun deleteOldPrices(before: Long)
 
+    @Query("""
+        SELECT * FROM price_records
+        WHERE contributedToOpenPrices = 0
+        AND barcode IS NOT NULL
+        ORDER BY createdAt DESC
+        LIMIT :limit
+    """)
+    suspend fun getUncontributedPrices(limit: Int = 50): List<PriceRecordEntity>
+
     // ==================== RECEIPTS ====================
 
     @Query("SELECT * FROM receipts WHERE userId = :userId ORDER BY createdAt DESC")
@@ -115,6 +127,15 @@ interface PriceDao {
 
     @Query("SELECT * FROM receipts WHERE status = :status ORDER BY createdAt ASC")
     suspend fun getReceiptsByStatus(status: ReceiptStatus): List<ReceiptEntity>
+
+    @Query("""
+        SELECT * FROM receipts
+        WHERE userId = :userId
+        AND contributedToOpenPrices = 0
+        AND status = 'COMPLETED' OR status = 'NEEDS_REVIEW'
+        ORDER BY createdAt DESC
+    """)
+    suspend fun getUncontributedReceipts(userId: String): List<ReceiptEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReceipt(receipt: ReceiptEntity)

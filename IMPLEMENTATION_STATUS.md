@@ -6,7 +6,7 @@ Migracion completa de PWA (Next.js/TypeScript) a Android nativo en Kotlin.
 
 **Arquitectura**: MVVM + Clean Architecture
 **UI**: Jetpack Compose + Material 3
-**Base de datos**: Room Database v5
+**Base de datos**: Room Database v7
 **Backend**: Supabase (PostgreSQL, Auth, Realtime, Storage)
 **Inyeccion de dependencias**: Hilt (Dagger)
 
@@ -305,14 +305,15 @@ buildConfigField("String", "SUPABASE_ANON_KEY", "\"your-anon-key\"")
 
 ## Estadisticas Actualizadas
 
-- **Total archivos**: 100+ archivos Kotlin
-- **Lineas de codigo**: ~12,000 lineas
-- **Pantallas**: 8 pantallas principales
-- **Componentes reutilizables**: 18
-- **Repositorios**: 5 (Shopping List, Recipe, Note, Auth, FrequentItem)
-- **Database**: Room v5 con 7 tablas
-- **Dependencias**: 35+ librerias
+- **Total archivos**: 115+ archivos Kotlin
+- **Lineas de codigo**: ~14,000 lineas
+- **Pantallas**: 9 pantallas principales
+- **Componentes reutilizables**: 22
+- **Repositorios**: 6 (Shopping List, Recipe, Note, Auth, FrequentItem, Price)
+- **Database**: Room v7 con 12 tablas
+- **Dependencias**: 38+ librerias
 - **Workers**: 2 (OfflineSync, RecurringList)
+- **APIs externas**: Open Prices, Open Food Facts, TheMealDB
 
 ---
 
@@ -345,14 +346,71 @@ implementation("com.itextpdf:itext7-core:7.2.5")
 
 ---
 
+## NUEVAS FUNCIONALIDADES - Comparador de Precios
+
+### 18. Comparador de Precios Inteligente
+**Ubicacion**: `data/repository/PriceRepository.kt`, `domain/price/`
+- Integracion con Open Prices API (prices.openfoodfacts.org)
+- Busqueda fuzzy con algoritmo Levenshtein para matching de productos
+- Analisis de lista completa con recomendaciones por tienda
+- Estrategia optima multi-tienda para maximizar ahorro
+- Cobertura de precios y calculo de ahorro potencial
+- Cache local de precios para uso offline
+
+### 19. Crowdsourcing de Precios
+**Ubicacion**: `data/ocr/ReceiptAnalyzer.kt`, `presentation/prices/`
+- Subir precios manualmente
+- Escaneo de tickets con OCR (ML Kit Text Recognition)
+- Extraccion automatica de productos y precios
+- Deteccion de cadena de supermercado (Mercadona, Carrefour, DIA, etc.)
+- Sistema de verificacion/confianza de precios
+- Estadisticas de contribucion por usuario
+
+### 20. Contribucion a Open Prices
+**Ubicacion**: `data/remote/OpenPricesContributor.kt`
+- Autenticacion con cuenta Open Food Facts
+- Subida de precios individuales a la base de datos global
+- Contribucion masiva desde tickets procesados
+- Subida de imagenes de tickets como prueba
+- Tracking de contribuciones pendientes
+- Estadisticas de precios compartidos
+- Ayuda a la comunidad global de comparacion de precios
+
+### Archivos Nuevos de Precios:
+```
+data/
+|-- local/
+|   |-- dao/PriceDao.kt
+|   |-- entity/PriceEntities.kt (Store, PriceRecord, Receipt, ReceiptItem, Contributor)
+|-- ocr/
+|   |__ ReceiptAnalyzer.kt
+|-- remote/
+|   |-- api/OpenPricesApi.kt
+|   |__ OpenPricesContributor.kt
+|-- repository/
+|   |__ PriceRepository.kt
+domain/
+|-- price/
+|   |-- PriceAnalyzer.kt
+|   |__ (PriceAnalysisResult, OptimalShoppingStrategy, etc.)
+|-- util/
+|   |__ FuzzySearch.kt
+presentation/
+|-- prices/
+|   |-- PriceComparisonScreen.kt
+|   |-- PriceComparisonViewModel.kt
+|   |__ PriceDialogs.kt
+```
+
+---
+
 ## TODOs para Futuras Versiones
 
 1. **Historial de Compras** - Guardar y ver compras anteriores
 2. **Compartir por Email** - Enviar lista por correo electronico
-3. **Comparador de Precios** - Comparar precios entre tiendas
-4. **Presupuesto** - Establecer limite y tracking de gastos
-5. **Wear OS Companion** - App para smartwatch
-6. **Google Assistant** - Comandos de voz con Assistant
+3. **Presupuesto** - Establecer limite y tracking de gastos
+4. **Wear OS Companion** - App para smartwatch
+5. **Google Assistant** - Comandos de voz con Assistant
 
 ---
 
