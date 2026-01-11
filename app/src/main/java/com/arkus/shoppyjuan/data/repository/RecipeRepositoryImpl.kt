@@ -1,18 +1,24 @@
 package com.arkus.shoppyjuan.data.repository
 
+import com.arkus.shoppyjuan.data.local.dao.ListItemDao
 import com.arkus.shoppyjuan.data.local.dao.RecipeDao
 import com.arkus.shoppyjuan.data.remote.api.MealDbApi
 import com.arkus.shoppyjuan.data.remote.mapper.toRecipe
+import com.arkus.shoppyjuan.domain.model.ListItem
 import com.arkus.shoppyjuan.domain.model.Recipe
 import com.arkus.shoppyjuan.domain.model.toDomain
 import com.arkus.shoppyjuan.domain.model.toEntity
 import com.arkus.shoppyjuan.domain.repository.RecipeRepository
+import com.arkus.shoppyjuan.domain.util.ProductCategory
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 import javax.inject.Inject
 
 class RecipeRepositoryImpl @Inject constructor(
     private val recipeDao: RecipeDao,
+    private val listItemDao: ListItemDao,
     private val mealDbApi: MealDbApi
 ) : RecipeRepository {
 
@@ -75,5 +81,47 @@ class RecipeRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             null
         }
+    }
+
+    override suspend fun exportIngredientsToList(recipeId: String, listId: String, multiplier: Int) {
+        val recipe = recipeDao.getRecipeById(recipeId).first()
+        recipe?.toDomain()?.let { recipeData ->
+            // Combine ingredients with their measures
+            val ingredientItems = recipeData.ingredients.mapIndexed { index, ingredient ->
+                val measure = recipeData.measures.getOrNull(index) ?: "1"
+                val detectedCategory = ProductCategory.detectCategory(ingredient)
+
+                ListItem(
+                    id = UUID.randomUUID().toString(),
+                    listId = listId,
+                    name = ingredient,
+                    quantity = extractQuantity(measure) * multiplier,
+                    unit = extractUnit(measure),
+                    category = detectedCategory.label,
+                    emoji = detectedCategory.emoji,
+                    note = "De receta: ${recipeData.name}"
+                )
+            }
+
+            // Insert all items
+            ingredientItems.forEach { item ->
+                listItemDao.insertItem(item.toEntity())
+            }
+        }
+    }
+
+    private fun extractQuantity(measure: String): Double {
+        val trimmed = measure.trim()
+        // Extract number from measure string (e.g., "2 cups" -> 2.0)
+        val numberRegex = Regex("([0-9]+\\.?[0-9]*)")
+        val match = numberRegex.find(trimmed)
+        return match?.value?.toDoubleOrNull() ?: 1.0
+    }
+
+    private fun extractUnit(measure: String): String? {
+        val trimmed = measure.trim()
+        // Remove numbers and get the remaining text (e.g., "2 cups" -> "cups")
+        val unit = trimmed.replace(Regex("[0-9]+\\.?[0-9]*"), "").trim()
+        return if (unit.isNotEmpty()) unit else null
     }
 }

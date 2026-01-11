@@ -4,11 +4,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkus.shoppyjuan.data.barcode.BarcodeScannerManager
+import com.arkus.shoppyjuan.data.realtime.RealtimeManager
 import com.arkus.shoppyjuan.data.speech.VoiceInputManager
 import com.arkus.shoppyjuan.domain.model.ListItem
+import com.arkus.shoppyjuan.domain.model.Note
 import com.arkus.shoppyjuan.domain.model.ShoppingList
+import com.arkus.shoppyjuan.domain.repository.NoteRepository
 import com.arkus.shoppyjuan.domain.repository.ShoppingListRepository
 import com.arkus.shoppyjuan.domain.util.ProductCategory
+import com.arkus.shoppyjuan.presentation.components.OnlineUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -20,6 +24,9 @@ data class ListDetailUiState(
     val items: List<ListItem> = emptyList(),
     val uncheckedItems: List<ListItem> = emptyList(),
     val checkedItems: List<ListItem> = emptyList(),
+    val notes: List<Note> = emptyList(),
+    val noteCount: Int = 0,
+    val onlineUsers: List<OnlineUser> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -27,6 +34,8 @@ data class ListDetailUiState(
 @HiltViewModel
 class ListDetailViewModel @Inject constructor(
     private val repository: ShoppingListRepository,
+    private val noteRepository: NoteRepository,
+    private val realtimeManager: RealtimeManager,
     val voiceInputManager: VoiceInputManager,
     val barcodeScannerManager: BarcodeScannerManager,
     savedStateHandle: SavedStateHandle
@@ -84,6 +93,53 @@ class ListDetailViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
+            }
+        }
+
+        viewModelScope.launch {
+            try {
+                // Load notes
+                noteRepository.getListNotes(listId).collect { notes ->
+                    _uiState.update {
+                        it.copy(notes = notes, noteCount = notes.size)
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+
+        // Track presence
+        startPresenceTracking()
+    }
+
+    private fun startPresenceTracking() {
+        viewModelScope.launch {
+            try {
+                val currentUserId = "current_user_id" // TODO: Get from AuthRepository
+                realtimeManager.trackPresence(listId, currentUserId).collect { presenceMap ->
+                    val onlineUsers = presenceMap.map { (userId, isOnline) ->
+                        OnlineUser(
+                            userId = userId,
+                            userName = "Usuario ${userId.take(4)}", // TODO: Get real name from user service
+                            isOnline = isOnline
+                        )
+                    }
+                    _uiState.update { it.copy(onlineUsers = onlineUsers) }
+                }
+            } catch (e: Exception) {
+                // Silently fail - presence is not critical
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            try {
+                realtimeManager.unsubscribeFromList(listId)
+            } catch (e: Exception) {
+                // Ignore cleanup errors
             }
         }
     }
@@ -151,6 +207,35 @@ class ListDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.deleteCheckedItems(listId)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    // Note management
+    fun addNote(content: String, userId: String, userName: String) {
+        viewModelScope.launch {
+            try {
+                val note = Note(
+                    id = UUID.randomUUID().toString(),
+                    listId = listId,
+                    itemId = null, // List-level note
+                    userId = userId,
+                    userName = userName,
+                    content = content
+                )
+                noteRepository.addNote(note)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    fun deleteNote(noteId: String) {
+        viewModelScope.launch {
+            try {
+                noteRepository.deleteNote(noteId)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
             }

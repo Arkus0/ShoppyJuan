@@ -1,7 +1,9 @@
 package com.arkus.shoppyjuan.di
 
+import com.arkus.shoppyjuan.data.repository.NoteRepositoryImpl
 import com.arkus.shoppyjuan.data.repository.RecipeRepositoryImpl
 import com.arkus.shoppyjuan.data.repository.ShoppingListRepositoryImpl
+import com.arkus.shoppyjuan.domain.repository.NoteRepository
 import com.arkus.shoppyjuan.domain.repository.RecipeRepository
 import com.arkus.shoppyjuan.domain.repository.ShoppingListRepository
 import dagger.Binds
@@ -25,4 +27,10 @@ abstract class RepositoryModule {
     abstract fun bindRecipeRepository(
         impl: RecipeRepositoryImpl
     ): RecipeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNoteRepository(
+        impl: NoteRepositoryImpl
+    ): NoteRepository
 }

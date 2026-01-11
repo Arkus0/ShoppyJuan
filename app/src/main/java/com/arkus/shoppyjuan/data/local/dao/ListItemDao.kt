@@ -50,4 +50,7 @@ interface ListItemDao {
 
     @Query("SELECT COUNT(*) FROM list_items WHERE listId = :listId AND checked = 0")
     suspend fun getUncheckedItemCount(listId: String): Int
+
+    @Query("UPDATE list_items SET note = :note, updatedAt = :updatedAt WHERE id = :itemId")
+    suspend fun updateItemNote(itemId: String, note: String?, updatedAt: Long)
 }

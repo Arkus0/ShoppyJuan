@@ -10,9 +10,10 @@ import com.arkus.shoppyjuan.data.local.entity.*
         ShoppingListEntity::class,
         ListItemEntity::class,
         RecipeEntity::class,
-        FavoriteItemEntity::class
+        FavoriteItemEntity::class,
+        NoteEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class ShoppyDatabase : RoomDatabase() {
@@ -20,6 +21,7 @@ abstract class ShoppyDatabase : RoomDatabase() {
     abstract fun listItemDao(): ListItemDao
     abstract fun recipeDao(): RecipeDao
     abstract fun favoriteItemDao(): FavoriteItemDao
+    abstract fun noteDao(): NoteDao
 
     companion object {
         const val DATABASE_NAME = "shoppy_juan_db"

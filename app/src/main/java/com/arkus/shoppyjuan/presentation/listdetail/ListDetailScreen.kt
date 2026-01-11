@@ -20,8 +20,7 @@ import com.arkus.shoppyjuan.data.barcode.BarcodeScannerManager
 import com.arkus.shoppyjuan.data.speech.VoiceInputManager
 import com.arkus.shoppyjuan.data.speech.VoiceInputState
 import com.arkus.shoppyjuan.domain.model.ListItem
-import com.arkus.shoppyjuan.presentation.components.BarcodeScannerScreen
-import com.arkus.shoppyjuan.presentation.components.VoiceInputButton
+import com.arkus.shoppyjuan.presentation.components.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +30,8 @@ fun ListDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var showNotesSheet by remember { mutableStateOf(false) }
+    var showOnlineUsersDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -47,6 +48,18 @@ fun ListDetailScreen(
                     }
                 },
                 actions = {
+                    // Notes button with badge
+                    BadgedBox(
+                        badge = {
+                            if (uiState.noteCount > 0) {
+                                Badge { Text(uiState.noteCount.toString()) }
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = { showNotesSheet = true }) {
+                            Icon(Icons.Default.Comment, contentDescription = "Notas")
+                        }
+                    }
                     IconButton(onClick = { viewModel.clearCheckedItems() }) {
                         Icon(Icons.Default.Delete, contentDescription = "Limpiar marcados")
                     }
@@ -106,6 +119,18 @@ fun ListDetailScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // Presence indicator
+                        if (uiState.onlineUsers.any { it.isOnline && it.userId != "current_user_id" }) {
+                            item {
+                                PresenceChip(
+                                    onlineUsers = uiState.onlineUsers,
+                                    currentUserId = "current_user_id", // TODO: Get from AuthRepository
+                                    onClick = { showOnlineUsersDialog = true },
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+                        }
+
                         if (uiState.uncheckedItems.isNotEmpty()) {
                             item {
                                 Text(
@@ -158,6 +183,29 @@ fun ListDetailScreen(
                     viewModel.addItem(name, quantity, unit)
                     showAddDialog = false
                 }
+            )
+        }
+
+        if (showNotesSheet) {
+            NotesBottomSheet(
+                notes = uiState.notes,
+                currentUserId = "current_user_id", // TODO: Get from AuthRepository
+                currentUserName = "Usuario", // TODO: Get from AuthRepository
+                onDismiss = { showNotesSheet = false },
+                onAddNote = { content ->
+                    viewModel.addNote(content, "current_user_id", "Usuario")
+                },
+                onDeleteNote = { noteId ->
+                    viewModel.deleteNote(noteId)
+                }
+            )
+        }
+
+        if (showOnlineUsersDialog) {
+            OnlineUsersDialog(
+                onlineUsers = uiState.onlineUsers,
+                currentUserId = "current_user_id", // TODO: Get from AuthRepository
+                onDismiss = { showOnlineUsersDialog = false }
             )
         }
     }

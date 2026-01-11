@@ -48,4 +48,9 @@ object DatabaseModule {
     fun provideFavoriteItemDao(database: ShoppyDatabase): FavoriteItemDao {
         return database.favoriteItemDao()
     }
+
+    @Provides
+    fun provideNoteDao(database: ShoppyDatabase): NoteDao {
+        return database.noteDao()
+    }
 }
