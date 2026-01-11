@@ -8,10 +8,15 @@ import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.presenceChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -61,7 +66,7 @@ class RealtimeManager @Inject constructor(
         }
 
         // Subscribe the channel
-        channel.subscribe()
+        CoroutineScope(Dispatchers.IO).launch { channel.subscribe() }
 
         return itemChanges.map { it ?: RealtimeEvent.ListUpdated(listId) }
     }
@@ -72,13 +77,17 @@ class RealtimeManager @Inject constructor(
     fun trackPresence(listId: String, userId: String): Flow<Map<String, Boolean>> {
         val channel = supabase.realtime.channel("presence:$listId")
 
-        // Track own presence
-        channel.track(mapOf("user_id" to userId, "online" to true))
+        // Track own presence and subscribe
+        CoroutineScope(Dispatchers.IO).launch {
+            channel.track(buildJsonObject {
+                put("user_id", userId)
+                put("online", true)
+            })
+            channel.subscribe()
+        }
 
         // Subscribe to presence changes
         val presenceFlow = channel.presenceChangeFlow()
-
-        channel.subscribe()
 
         return presenceFlow.map { presenceChange ->
             val onlineUsers = mutableMapOf<String, Boolean>()
@@ -103,8 +112,10 @@ class RealtimeManager @Inject constructor(
      */
     suspend fun unsubscribeFromList(listId: String) {
         try {
-            supabase.realtime.removeChannel("list:$listId")
-            supabase.realtime.removeChannel("presence:$listId")
+            val listChannel = supabase.realtime.channel("list:$listId")
+            val presenceChannel = supabase.realtime.channel("presence:$listId")
+            supabase.realtime.removeChannel(listChannel)
+            supabase.realtime.removeChannel(presenceChannel)
         } catch (e: Exception) {
             Log.e(TAG, "Error unsubscribing from list", e)
         }

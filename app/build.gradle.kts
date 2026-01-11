@@ -148,6 +148,12 @@ dependencies {
     // Accompanist (for permissions)
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
+    // Google Play Services Location
+    implementation("com.google.android.gms:play-services-location:21.1.0")
+
+    // AppCompat (for theme management)
+    implementation("androidx.appcompat:appcompat:1.6.1")
+
     // QR Code generation
     implementation("com.google.zxing:core:3.5.2")
 

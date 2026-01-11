@@ -44,13 +44,13 @@ class FrequentItemRepository @Inject constructor(
             frequentItemDao.incrementCount(normalizedName)
         } else {
             // Create new frequent item
-            val detectedCategory = category ?: ProductCategory.detectCategory(name)
+            val detectedCategory = ProductCategory.detectCategory(name)
             val newItem = FrequentItemEntity(
                 name = name.trim(),
                 normalizedName = normalizedName,
                 count = 1,
                 lastUsed = System.currentTimeMillis(),
-                category = detectedCategory.label,
+                category = category ?: detectedCategory.label,
                 emoji = emoji ?: detectedCategory.emoji,
                 defaultUnit = unit
             )

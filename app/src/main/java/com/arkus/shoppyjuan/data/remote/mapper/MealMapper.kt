@@ -3,7 +3,6 @@ package com.arkus.shoppyjuan.data.remote.mapper
 import com.arkus.shoppyjuan.data.remote.dto.MealDetailDto
 import com.arkus.shoppyjuan.data.remote.dto.MealDto
 import com.arkus.shoppyjuan.domain.model.Recipe
-import com.arkus.shoppyjuan.domain.model.RecipeIngredient
 
 fun MealDto.toRecipe(): Recipe {
     return Recipe(
@@ -14,11 +13,13 @@ fun MealDto.toRecipe(): Recipe {
         instructions = "",
         imageUrl = thumbnail,
         ingredients = emptyList(),
+        measures = emptyList(),
         isFavorite = false
     )
 }
 
 fun MealDetailDto.toRecipe(): Recipe {
+    val ingredientPairs = getIngredients()
     return Recipe(
         id = id,
         name = name,
@@ -26,14 +27,8 @@ fun MealDetailDto.toRecipe(): Recipe {
         area = area ?: "",
         instructions = instructions ?: "",
         imageUrl = thumbnail,
-        youtubeUrl = youtubeUrl,
-        ingredients = getIngredients().map { (ingredient, measure) ->
-            RecipeIngredient(
-                name = translateIngredient(ingredient),
-                quantity = extractQuantity(measure),
-                unit = extractUnit(measure)
-            )
-        },
+        ingredients = ingredientPairs.map { (ingredient, _) -> translateIngredient(ingredient) },
+        measures = ingredientPairs.map { (_, measure) -> "${extractQuantity(measure)} ${extractUnit(measure)}" },
         isFavorite = false
     )
 }

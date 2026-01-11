@@ -9,6 +9,8 @@ import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -57,7 +59,7 @@ class AuthRepository @Inject constructor(
             supabase.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
-                data = mapOf("name" to name)
+                data = buildJsonObject { put("name", name) }
             }
 
             val user = supabase.auth.currentUserOrNull()
@@ -176,7 +178,7 @@ class AuthRepository @Inject constructor(
     suspend fun updateProfile(name: String?, avatarUrl: String?): AuthResult {
         return try {
             supabase.auth.modifyUser {
-                data = buildMap {
+                data = buildJsonObject {
                     name?.let { put("name", it) }
                     avatarUrl?.let { put("avatar_url", it) }
                 }

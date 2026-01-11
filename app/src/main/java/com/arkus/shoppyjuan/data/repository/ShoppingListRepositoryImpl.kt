@@ -160,7 +160,7 @@ class ShoppingListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateItemPosition(itemId: String, position: Int) {
-        listItemDao.updatePosition(itemId, position)
+        listItemDao.updateItemPosition(itemId, position)
     }
 
     // Favorites

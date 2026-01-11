@@ -11,6 +11,7 @@ import com.arkus.shoppyjuan.data.remote.api.OpenPricesApi
 import com.arkus.shoppyjuan.data.remote.api.OpenPriceSubmissionResponse
 import com.arkus.shoppyjuan.data.remote.api.OpenUserStatsResponse
 import com.arkus.shoppyjuan.domain.settings.UserPreferencesManager
+import com.arkus.shoppyjuan.domain.settings.calculateDistanceKm
 import com.arkus.shoppyjuan.domain.util.FuzzySearch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -41,12 +42,12 @@ class PriceRepository @Inject constructor(
      */
     suspend fun getNearbyStores(): List<StoreEntity> = withContext(Dispatchers.IO) {
         val userLocation = locationManager.getLocationForPriceFilter() ?: return@withContext emptyList()
-        val radiusKm = userPreferencesManager.searchRadius.first()
+        val radiusKm = userPreferencesManager.searchRadiusKm.first()
 
         val allStores = priceDao.getAllStoresSync()
         allStores.filter { store ->
             if (store.latitude != null && store.longitude != null) {
-                val distance = userPreferencesManager.calculateDistanceKm(
+                val distance = calculateDistanceKm(
                     userLocation.latitude, userLocation.longitude,
                     store.latitude, store.longitude
                 )
@@ -62,11 +63,11 @@ class PriceRepository @Inject constructor(
      */
     suspend fun isStoreInRange(store: StoreEntity): Boolean {
         val userLocation = locationManager.getLocationForPriceFilter() ?: return true
-        val radiusKm = userPreferencesManager.searchRadius.first()
+        val radiusKm = userPreferencesManager.searchRadiusKm.first()
 
         if (store.latitude == null || store.longitude == null) return true
 
-        val distance = userPreferencesManager.calculateDistanceKm(
+        val distance = calculateDistanceKm(
             userLocation.latitude, userLocation.longitude,
             store.latitude, store.longitude
         )
@@ -100,7 +101,7 @@ class PriceRepository @Inject constructor(
      */
     private suspend fun filterPricesByDistance(prices: List<PriceRecordEntity>): List<PriceRecordEntity> {
         val userLocation = locationManager.getLocationForPriceFilter() ?: return prices
-        val radiusKm = userPreferencesManager.searchRadius.first()
+        val radiusKm = userPreferencesManager.searchRadiusKm.first()
 
         // Get all stores to check their locations
         val stores = priceDao.getAllStoresSync().associateBy { it.id }
@@ -108,7 +109,7 @@ class PriceRepository @Inject constructor(
         return prices.filter { price ->
             val store = stores[price.storeId]
             if (store?.latitude != null && store.longitude != null) {
-                val distance = userPreferencesManager.calculateDistanceKm(
+                val distance = calculateDistanceKm(
                     userLocation.latitude, userLocation.longitude,
                     store.latitude, store.longitude
                 )

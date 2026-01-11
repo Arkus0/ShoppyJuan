@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FavoriteItemDao {
+    @Query("SELECT * FROM favorite_items ORDER BY createdAt DESC")
+    fun getAllFavorites(): Flow<List<FavoriteItemEntity>>
+
     @Query("SELECT * FROM favorite_items WHERE userId = :userId ORDER BY createdAt DESC")
     fun getFavoriteItems(userId: String): Flow<List<FavoriteItemEntity>>
 
