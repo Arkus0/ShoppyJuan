@@ -63,4 +63,9 @@ object DatabaseModule {
     fun providePendingSyncDao(database: ShoppyDatabase): PendingSyncDao {
         return database.pendingSyncDao()
     }
+
+    @Provides
+    fun providePriceDao(database: ShoppyDatabase): PriceDao {
+        return database.priceDao()
+    }
 }

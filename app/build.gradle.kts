@@ -124,6 +124,8 @@ dependencies {
 
     // Work Manager (for background sync)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    ksp("androidx.hilt:hilt-compiler:1.1.0")
 
     // CameraX for barcode scanning
     val cameraxVersion = "1.3.1"
@@ -134,6 +136,9 @@ dependencies {
 
     // ML Kit Barcode Scanning
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
+    // ML Kit Text Recognition (OCR for receipts)
+    implementation("com.google.mlkit:text-recognition:16.0.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.1"))

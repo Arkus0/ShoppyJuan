@@ -15,9 +15,15 @@ import com.arkus.shoppyjuan.data.local.entity.*
         FavoriteItemEntity::class,
         NoteEntity::class,
         FrequentItemEntity::class,
-        PendingSyncEntity::class
+        PendingSyncEntity::class,
+        // Price comparison entities
+        StoreEntity::class,
+        PriceRecordEntity::class,
+        ReceiptEntity::class,
+        ReceiptItemEntity::class,
+        PriceContributorEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class ShoppyDatabase : RoomDatabase() {
@@ -28,6 +34,7 @@ abstract class ShoppyDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
     abstract fun frequentItemDao(): FrequentItemDao
     abstract fun pendingSyncDao(): PendingSyncDao
+    abstract fun priceDao(): PriceDao
 
     companion object {
         const val DATABASE_NAME = "shoppy_juan_db"

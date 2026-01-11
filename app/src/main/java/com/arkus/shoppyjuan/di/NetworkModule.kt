@@ -1,6 +1,7 @@
 package com.arkus.shoppyjuan.di
 
 import com.arkus.shoppyjuan.data.remote.api.MealDbApi
+import com.arkus.shoppyjuan.data.remote.api.OpenPricesApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -12,6 +13,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -53,5 +55,19 @@ object NetworkModule {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(MealDbApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOpenPricesApi(
+        okHttpClient: OkHttpClient,
+        json: Json
+    ): OpenPricesApi {
+        return Retrofit.Builder()
+            .baseUrl(OpenPricesApi.BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(OpenPricesApi::class.java)
     }
 }
