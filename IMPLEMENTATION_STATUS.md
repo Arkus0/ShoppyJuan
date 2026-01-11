@@ -404,6 +404,40 @@ presentation/
 
 ---
 
+## NUEVAS FUNCIONALIDADES - Idioma y Ubicacion
+
+### 21. Selector de Idioma (Espanol/Ingles)
+**Ubicacion**: `domain/settings/UserPreferencesManager.kt`, `presentation/profile/ProfileScreen.kt`
+- Soporte completo para Espanol e Ingles
+- Strings localizados en `values/strings.xml` (ES) y `values-en/strings.xml` (EN)
+- Selector de idioma en pantalla de Perfil
+- Persistencia de preferencia con DataStore
+- Cambio dinamico sin reiniciar app
+
+### 22. Filtrado por Radio de Busqueda
+**Ubicacion**: `data/location/LocationManager.kt`, `data/repository/PriceRepository.kt`
+- Configuracion de radio de busqueda (1-50 km)
+- Slider visual en Perfil para ajustar distancia
+- LocationManager con FusedLocationProviderClient
+- Filtrado automatico de precios por distancia
+- Calculo de distancia con formula Haversine
+- Soporte para ubicacion en tiempo real
+
+### Archivos Nuevos de Idioma/Ubicacion:
+```
+app/src/main/
+|-- res/
+|   |-- values/strings.xml (Espanol - default)
+|   |-- values-en/strings.xml (Ingles)
+|-- java/.../
+|   |-- domain/settings/
+|   |   |__ UserPreferencesManager.kt
+|   |-- data/location/
+|   |   |__ LocationManager.kt
+```
+
+---
+
 ## TODOs para Futuras Versiones
 
 1. **Historial de Compras** - Guardar y ver compras anteriores

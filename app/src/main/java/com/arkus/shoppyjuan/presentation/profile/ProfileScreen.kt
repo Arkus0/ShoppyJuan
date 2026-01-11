@@ -2,6 +2,7 @@ package com.arkus.shoppyjuan.presentation.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,11 +11,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -23,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.arkus.shoppyjuan.R
+import com.arkus.shoppyjuan.domain.settings.AppLanguage
+import com.arkus.shoppyjuan.domain.settings.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +41,8 @@ fun ProfileScreen(
     var showAboutDialog by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    var showRadiusDialog by remember { mutableStateOf(false) }
 
     // Error snackbar
     val snackbarHostState = remember { SnackbarHostState() }
@@ -185,15 +193,42 @@ fun ProfileScreen(
 
                         ProfileOptionCard(
                             icon = Icons.Default.Palette,
-                            title = "Apariencia",
-                            subtitle = "Tema claro u oscuro",
+                            title = stringResource(R.string.theme),
+                            subtitle = when (uiState.theme) {
+                                AppTheme.LIGHT -> stringResource(R.string.theme_light)
+                                AppTheme.DARK -> stringResource(R.string.theme_dark)
+                                AppTheme.SYSTEM -> stringResource(R.string.theme_system)
+                            },
                             onClick = { showThemeDialog = true }
                         )
 
                         ProfileOptionCard(
+                            icon = Icons.Default.Language,
+                            title = stringResource(R.string.language),
+                            subtitle = uiState.language.displayName,
+                            onClick = { showLanguageDialog = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = stringResource(R.string.location_settings).uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+
+                        ProfileOptionCard(
+                            icon = Icons.Default.MyLocation,
+                            title = stringResource(R.string.search_radius),
+                            subtitle = stringResource(R.string.search_radius_desc, uiState.searchRadiusKm),
+                            onClick = { showRadiusDialog = true }
+                        )
+
+                        ProfileOptionCard(
                             icon = Icons.Default.Info,
-                            title = "Acerca de",
-                            subtitle = "Version 1.0.0",
+                            title = stringResource(R.string.about),
+                            subtitle = stringResource(R.string.version) + " 1.0.0",
                             onClick = { showAboutDialog = true }
                         )
 
@@ -277,7 +312,38 @@ fun ProfileScreen(
 
         // Theme dialog
         if (showThemeDialog) {
-            ThemeSettingsDialog(onDismiss = { showThemeDialog = false })
+            ThemeSettingsDialog(
+                currentTheme = uiState.theme,
+                onThemeSelected = { theme ->
+                    viewModel.updateTheme(theme)
+                    showThemeDialog = false
+                },
+                onDismiss = { showThemeDialog = false }
+            )
+        }
+
+        // Language dialog
+        if (showLanguageDialog) {
+            LanguageSettingsDialog(
+                currentLanguage = uiState.language,
+                onLanguageSelected = { language ->
+                    viewModel.updateLanguage(language)
+                    showLanguageDialog = false
+                },
+                onDismiss = { showLanguageDialog = false }
+            )
+        }
+
+        // Radius dialog
+        if (showRadiusDialog) {
+            RadiusSettingsDialog(
+                currentRadiusKm = uiState.searchRadiusKm,
+                onRadiusChanged = { radius ->
+                    viewModel.updateSearchRadius(radius)
+                    showRadiusDialog = false
+                },
+                onDismiss = { showRadiusDialog = false }
+            )
         }
     }
 }
@@ -624,86 +690,163 @@ fun NotificationsSettingsDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-fun ThemeSettingsDialog(onDismiss: () -> Unit) {
-    var selectedTheme by remember { mutableStateOf("system") }
+fun ThemeSettingsDialog(
+    currentTheme: AppTheme,
+    onThemeSelected: (AppTheme) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedTheme by remember { mutableStateOf(currentTheme) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Apariencia") },
+        title = { Text(stringResource(R.string.theme)) },
         text = {
             Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selectedTheme == "system",
-                        onClick = { selectedTheme = "system" }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text("Automatico", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "Seguir ajustes del sistema",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                AppTheme.entries.forEach { theme ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedTheme = theme }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedTheme == theme,
+                            onClick = { selectedTheme = theme }
                         )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selectedTheme == "light",
-                        onClick = { selectedTheme = "light" }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text("Tema claro", style = MaterialTheme.typography.bodyLarge)
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Siempre usar tema claro",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selectedTheme == "dark",
-                        onClick = { selectedTheme = "dark" }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text("Tema oscuro", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "Siempre usar tema oscuro",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            text = when (theme) {
+                                AppTheme.SYSTEM -> stringResource(R.string.theme_system)
+                                AppTheme.LIGHT -> stringResource(R.string.theme_light)
+                                AppTheme.DARK -> stringResource(R.string.theme_dark)
+                            },
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Guardar")
+            TextButton(onClick = { onThemeSelected(selectedTheme) }) {
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+fun LanguageSettingsDialog(
+    currentLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedLanguage by remember { mutableStateOf(currentLanguage) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.language)) },
+        text = {
+            Column {
+                AppLanguage.entries.forEach { language ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedLanguage = language }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedLanguage == language,
+                            onClick = { selectedLanguage = language }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = language.displayName,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onLanguageSelected(selectedLanguage) }) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+fun RadiusSettingsDialog(
+    currentRadiusKm: Int,
+    onRadiusChanged: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var sliderValue by remember { mutableFloatStateOf(currentRadiusKm.toFloat()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.search_radius)) },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.km_format, sliderValue.toInt()),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Slider(
+                    value = sliderValue,
+                    onValueChange = { sliderValue = it },
+                    valueRange = 1f..50f,
+                    steps = 48,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("1 km", style = MaterialTheme.typography.bodySmall)
+                    Text("50 km", style = MaterialTheme.typography.bodySmall)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = stringResource(R.string.search_radius_desc, sliderValue.toInt()),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onRadiusChanged(sliderValue.toInt()) }) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
             }
         }
     )

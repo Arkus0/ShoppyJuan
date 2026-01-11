@@ -4,11 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkus.shoppyjuan.data.auth.AuthRepository
 import com.arkus.shoppyjuan.data.auth.AuthResult
+import com.arkus.shoppyjuan.data.location.LocationManager
+import com.arkus.shoppyjuan.domain.settings.AppLanguage
+import com.arkus.shoppyjuan.domain.settings.AppTheme
+import com.arkus.shoppyjuan.domain.settings.UserPreferencesManager
 import com.arkus.shoppyjuan.domain.user.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,13 +33,21 @@ data class ProfileUiState(
     val isChangingPassword: Boolean = false,
     val passwordChangeSuccess: Boolean = false,
     val signedOut: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // Preferences
+    val language: AppLanguage = AppLanguage.SPANISH,
+    val theme: AppTheme = AppTheme.SYSTEM,
+    val searchRadiusKm: Int = 10,
+    val locationEnabled: Boolean = false,
+    val hasLocationPermission: Boolean = false
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userManager: UserManager
+    private val userManager: UserManager,
+    private val userPreferencesManager: UserPreferencesManager,
+    private val locationManager: LocationManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -42,6 +55,70 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadProfile()
+        loadPreferences()
+    }
+
+    private fun loadPreferences() {
+        viewModelScope.launch {
+            // Collect preferences
+            launch {
+                userPreferencesManager.language.collect { language ->
+                    _uiState.update { it.copy(language = language) }
+                }
+            }
+            launch {
+                userPreferencesManager.theme.collect { theme ->
+                    _uiState.update { it.copy(theme = theme) }
+                }
+            }
+            launch {
+                userPreferencesManager.searchRadius.collect { radius ->
+                    _uiState.update { it.copy(searchRadiusKm = radius) }
+                }
+            }
+            launch {
+                userPreferencesManager.locationEnabled.collect { enabled ->
+                    _uiState.update { it.copy(locationEnabled = enabled) }
+                }
+            }
+
+            // Check location permission
+            val hasPermission = locationManager.hasLocationPermission()
+            _uiState.update { it.copy(hasLocationPermission = hasPermission) }
+        }
+    }
+
+    fun updateLanguage(language: AppLanguage) {
+        viewModelScope.launch {
+            userPreferencesManager.updateLanguage(language)
+        }
+    }
+
+    fun updateTheme(theme: AppTheme) {
+        viewModelScope.launch {
+            userPreferencesManager.updateTheme(theme)
+        }
+    }
+
+    fun updateSearchRadius(radiusKm: Int) {
+        viewModelScope.launch {
+            userPreferencesManager.updateSearchRadius(radiusKm)
+        }
+    }
+
+    fun updateLocationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferencesManager.updateLocationEnabled(enabled)
+            if (enabled) {
+                // Try to get and save current location
+                locationManager.updateAndSaveLocation()
+            }
+        }
+    }
+
+    fun refreshLocationPermission() {
+        val hasPermission = locationManager.hasLocationPermission()
+        _uiState.update { it.copy(hasLocationPermission = hasPermission) }
     }
 
     private fun loadProfile() {

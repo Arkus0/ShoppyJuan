@@ -11,6 +11,9 @@ interface PriceDao {
     @Query("SELECT * FROM stores ORDER BY name ASC")
     fun getAllStores(): Flow<List<StoreEntity>>
 
+    @Query("SELECT * FROM stores ORDER BY name ASC")
+    suspend fun getAllStoresSync(): List<StoreEntity>
+
     @Query("SELECT * FROM stores WHERE chain = :chain")
     fun getStoresByChain(chain: String): Flow<List<StoreEntity>>
 

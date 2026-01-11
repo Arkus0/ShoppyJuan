@@ -3,14 +3,18 @@ package com.arkus.shoppyjuan.data.repository
 import android.net.Uri
 import com.arkus.shoppyjuan.data.local.dao.PriceDao
 import com.arkus.shoppyjuan.data.local.entity.*
+import com.arkus.shoppyjuan.data.location.LocationManager
+import com.arkus.shoppyjuan.data.location.UserLocation
 import com.arkus.shoppyjuan.data.remote.ContributionSummary
 import com.arkus.shoppyjuan.data.remote.OpenPricesContributor
 import com.arkus.shoppyjuan.data.remote.api.OpenPricesApi
 import com.arkus.shoppyjuan.data.remote.api.OpenPriceSubmissionResponse
 import com.arkus.shoppyjuan.data.remote.api.OpenUserStatsResponse
+import com.arkus.shoppyjuan.domain.settings.UserPreferencesManager
 import com.arkus.shoppyjuan.domain.util.FuzzySearch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
@@ -20,7 +24,9 @@ import javax.inject.Singleton
 class PriceRepository @Inject constructor(
     private val priceDao: PriceDao,
     private val openPricesApi: OpenPricesApi,
-    private val openPricesContributor: OpenPricesContributor
+    private val openPricesContributor: OpenPricesContributor,
+    private val locationManager: LocationManager,
+    private val userPreferencesManager: UserPreferencesManager
 ) {
     // ==================== STORES ====================
 
@@ -30,33 +36,97 @@ class PriceRepository @Inject constructor(
 
     suspend fun addStore(store: StoreEntity) = priceDao.insertStore(store)
 
+    /**
+     * Get stores within the configured search radius
+     */
+    suspend fun getNearbyStores(): List<StoreEntity> = withContext(Dispatchers.IO) {
+        val userLocation = locationManager.getLocationForPriceFilter() ?: return@withContext emptyList()
+        val radiusKm = userPreferencesManager.searchRadius.first()
+
+        val allStores = priceDao.getAllStoresSync()
+        allStores.filter { store ->
+            if (store.latitude != null && store.longitude != null) {
+                val distance = userPreferencesManager.calculateDistanceKm(
+                    userLocation.latitude, userLocation.longitude,
+                    store.latitude, store.longitude
+                )
+                distance <= radiusKm
+            } else {
+                true // Include stores without location data
+            }
+        }
+    }
+
+    /**
+     * Check if a store is within the search radius
+     */
+    suspend fun isStoreInRange(store: StoreEntity): Boolean {
+        val userLocation = locationManager.getLocationForPriceFilter() ?: return true
+        val radiusKm = userPreferencesManager.searchRadius.first()
+
+        if (store.latitude == null || store.longitude == null) return true
+
+        val distance = userPreferencesManager.calculateDistanceKm(
+            userLocation.latitude, userLocation.longitude,
+            store.latitude, store.longitude
+        )
+        return distance <= radiusKm
+    }
+
     // ==================== PRICE SEARCH ====================
 
     /**
-     * Search for prices using fuzzy matching
+     * Search for prices using fuzzy matching, filtered by distance
      */
     suspend fun searchPrices(query: String): List<PriceRecordEntity> = withContext(Dispatchers.IO) {
         val normalizedQuery = FuzzySearch.normalize(query)
         val localResults = priceDao.searchPrices(normalizedQuery)
 
+        // Filter by distance
+        val filteredResults = filterPricesByDistance(localResults)
+
         // If we have good local results, return them
-        if (localResults.size >= 5) {
-            return@withContext localResults
+        if (filteredResults.size >= 5) {
+            return@withContext filteredResults
         }
 
         // Otherwise, try to fetch from Open Prices API
         // Note: Open Prices doesn't support text search, so we rely on barcode or local data
-        localResults
+        filteredResults
     }
 
     /**
-     * Get prices by barcode, combining local and API data
+     * Filter prices by distance from user's location
+     */
+    private suspend fun filterPricesByDistance(prices: List<PriceRecordEntity>): List<PriceRecordEntity> {
+        val userLocation = locationManager.getLocationForPriceFilter() ?: return prices
+        val radiusKm = userPreferencesManager.searchRadius.first()
+
+        // Get all stores to check their locations
+        val stores = priceDao.getAllStoresSync().associateBy { it.id }
+
+        return prices.filter { price ->
+            val store = stores[price.storeId]
+            if (store?.latitude != null && store.longitude != null) {
+                val distance = userPreferencesManager.calculateDistanceKm(
+                    userLocation.latitude, userLocation.longitude,
+                    store.latitude, store.longitude
+                )
+                distance <= radiusKm
+            } else {
+                true // Include prices without store location data
+            }
+        }
+    }
+
+    /**
+     * Get prices by barcode, combining local and API data, filtered by distance
      */
     suspend fun getPricesByBarcode(barcode: String): List<PriceRecordEntity> = withContext(Dispatchers.IO) {
         val localPrices = priceDao.getPricesByBarcode(barcode)
 
         // Try to fetch fresh data from Open Prices
-        try {
+        val allPrices = try {
             val apiResponse = openPricesApi.getPricesByBarcode(barcode)
             val apiPrices = apiResponse.items.map { item ->
                 PriceRecordEntity(
@@ -88,20 +158,26 @@ class PriceRepository @Inject constructor(
             // Return local data on API failure
             localPrices
         }
+
+        // Filter by distance
+        filterPricesByDistance(allPrices)
     }
 
     /**
-     * Get prices for multiple products (for list analysis)
+     * Get prices for multiple products (for list analysis), filtered by distance
      */
     suspend fun getPricesForProducts(productNames: List<String>): Map<String, List<PriceRecordEntity>> =
         withContext(Dispatchers.IO) {
             val normalizedNames = productNames.map { FuzzySearch.normalize(it) }
             val allPrices = priceDao.getPricesForNormalizedNames(normalizedNames)
 
+            // Filter by distance first
+            val filteredPrices = filterPricesByDistance(allPrices)
+
             // Group by normalized name with fuzzy matching
             productNames.associateWith { name ->
                 val normalized = FuzzySearch.normalize(name)
-                allPrices.filter { price ->
+                filteredPrices.filter { price ->
                     FuzzySearch.isMatch(normalized, price.normalizedName, threshold = 0.6)
                 }.sortedBy { it.price }
             }
