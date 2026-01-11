@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "51211952268",
+    "project_id": "shoppyjuan-82e7e",
+    "storage_bucket": "shoppyjuan-82e7e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:51211952268:android:6a7127a1a0aed198a0dba9",
+        "android_client_info": {
+          "package_name": "com.arkus.shoppyjuan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdhL8m_DkjlkFwdWit6X3hlj5qXs9nNKk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
