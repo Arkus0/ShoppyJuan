@@ -24,8 +24,8 @@ android {
         }
 
         // Supabase config (replace with your values)
-        buildConfigField("String", "SUPABASE_URL", "\"https://your-project.supabase.co\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"your-anon-key\"")
+        buildConfigField("String", "SUPABASE_URL", "\"https://tzdsgohygwhnlmudvenq.supabase.co\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_oJlSTa05s6AN4iW-lvxKig_fY0A1dCF"")
     }
 
     buildTypes {
