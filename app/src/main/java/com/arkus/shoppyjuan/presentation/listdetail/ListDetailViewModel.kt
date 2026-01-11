@@ -11,6 +11,8 @@ import com.arkus.shoppyjuan.domain.model.Note
 import com.arkus.shoppyjuan.domain.model.ShoppingList
 import com.arkus.shoppyjuan.domain.repository.NoteRepository
 import com.arkus.shoppyjuan.domain.repository.ShoppingListRepository
+import com.arkus.shoppyjuan.domain.user.CurrentUser
+import com.arkus.shoppyjuan.domain.user.UserManager
 import com.arkus.shoppyjuan.domain.util.ProductCategory
 import com.arkus.shoppyjuan.presentation.components.OnlineUser
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +29,7 @@ data class ListDetailUiState(
     val notes: List<Note> = emptyList(),
     val noteCount: Int = 0,
     val onlineUsers: List<OnlineUser> = emptyList(),
+    val currentUser: CurrentUser? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -36,6 +39,7 @@ class ListDetailViewModel @Inject constructor(
     private val repository: ShoppingListRepository,
     private val noteRepository: NoteRepository,
     private val realtimeManager: RealtimeManager,
+    private val userManager: UserManager,
     val voiceInputManager: VoiceInputManager,
     val barcodeScannerManager: BarcodeScannerManager,
     savedStateHandle: SavedStateHandle
@@ -46,67 +50,63 @@ class ListDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ListDetailUiState())
     val uiState: StateFlow<ListDetailUiState> = _uiState.asStateFlow()
 
+    // Expose current user info for the UI
+    val currentUserId: String get() = userManager.currentUserId
+    val currentUserName: String get() = userManager.currentUserName
+
     init {
+        loadCurrentUser()
         loadListDetails()
     }
 
+    private fun loadCurrentUser() {
+        userManager.refreshUser()
+        _uiState.update { it.copy(currentUser = userManager.currentUser.value) }
+
+        // Observe user changes
+        viewModelScope.launch {
+            userManager.currentUser.collect { user ->
+                _uiState.update { it.copy(currentUser = user) }
+            }
+        }
+    }
+
     private fun loadListDetails() {
+        _uiState.update { it.copy(isLoading = true) }
+
+        // Load list info
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                // Load list info
-                repository.getListById(listId).collect { list ->
-                    _uiState.update { it.copy(list = list) }
+            repository.getListById(listId)
+                .catch { e -> _uiState.update { it.copy(error = e.message) } }
+                .collect { list ->
+                    _uiState.update { it.copy(list = list, isLoading = false) }
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message, isLoading = false) }
-            }
         }
 
+        // Load items - single flow that derives unchecked/checked
         viewModelScope.launch {
-            try {
-                // Load all items
-                repository.getItemsByListId(listId).collect { items ->
-                    _uiState.update { it.copy(items = items, isLoading = false) }
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message, isLoading = false) }
-            }
-        }
-
-        viewModelScope.launch {
-            try {
-                // Load unchecked items
-                repository.getUncheckedItems(listId).collect { items ->
-                    _uiState.update { it.copy(uncheckedItems = items) }
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
-            }
-        }
-
-        viewModelScope.launch {
-            try {
-                // Load checked items
-                repository.getCheckedItems(listId).collect { items ->
-                    _uiState.update { it.copy(checkedItems = items) }
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
-            }
-        }
-
-        viewModelScope.launch {
-            try {
-                // Load notes
-                noteRepository.getListNotes(listId).collect { notes ->
+            repository.getItemsByListId(listId)
+                .catch { e -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
+                .collect { items ->
+                    val (unchecked, checked) = items.partition { !it.checked }
                     _uiState.update {
-                        it.copy(notes = notes, noteCount = notes.size)
+                        it.copy(
+                            items = items,
+                            uncheckedItems = unchecked.sortedBy { item -> item.position },
+                            checkedItems = checked.sortedBy { item -> item.position },
+                            isLoading = false
+                        )
                     }
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
-            }
+        }
+
+        // Load notes
+        viewModelScope.launch {
+            noteRepository.getListNotes(listId)
+                .catch { e -> _uiState.update { it.copy(error = e.message) } }
+                .collect { notes ->
+                    _uiState.update { it.copy(notes = notes, noteCount = notes.size) }
+                }
         }
 
         // Track presence
@@ -116,17 +116,19 @@ class ListDetailViewModel @Inject constructor(
     private fun startPresenceTracking() {
         viewModelScope.launch {
             try {
-                val currentUserId = "current_user_id" // TODO: Get from AuthRepository
-                realtimeManager.trackPresence(listId, currentUserId).collect { presenceMap ->
-                    val onlineUsers = presenceMap.map { (userId, isOnline) ->
-                        OnlineUser(
-                            userId = userId,
-                            userName = "Usuario ${userId.take(4)}", // TODO: Get real name from user service
-                            isOnline = isOnline
-                        )
+                val userId = userManager.currentUserId.ifEmpty { "anonymous_${UUID.randomUUID().toString().take(8)}" }
+                realtimeManager.trackPresence(listId, userId)
+                    .catch { /* Silently fail - presence is not critical */ }
+                    .collect { presenceMap ->
+                        val onlineUsers = presenceMap.map { (id, isOnline) ->
+                            OnlineUser(
+                                userId = id,
+                                userName = userManager.getDisplayName(id),
+                                isOnline = isOnline
+                            )
+                        }
+                        _uiState.update { it.copy(onlineUsers = onlineUsers) }
                     }
-                    _uiState.update { it.copy(onlineUsers = onlineUsers) }
-                }
             } catch (e: Exception) {
                 // Silently fail - presence is not critical
             }
@@ -152,10 +154,7 @@ class ListDetailViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                // Detect category and emoji automatically
                 val detectedCategory = ProductCategory.detectCategory(name)
-                val emoji = detectedCategory.emoji
-
                 val item = ListItem(
                     id = UUID.randomUUID().toString(),
                     listId = listId,
@@ -163,8 +162,9 @@ class ListDetailViewModel @Inject constructor(
                     quantity = quantity,
                     unit = unit,
                     category = category ?: detectedCategory.label,
-                    emoji = emoji,
-                    position = _uiState.value.items.size
+                    emoji = detectedCategory.emoji,
+                    position = _uiState.value.items.size,
+                    addedBy = userManager.currentUserId.ifEmpty { null }
                 )
                 repository.addItem(item)
             } catch (e: Exception) {
@@ -213,14 +213,33 @@ class ListDetailViewModel @Inject constructor(
         }
     }
 
-    // Note management
+    // Note management - now uses UserManager automatically
+    fun addNote(content: String) {
+        viewModelScope.launch {
+            try {
+                val note = Note(
+                    id = UUID.randomUUID().toString(),
+                    listId = listId,
+                    itemId = null,
+                    userId = userManager.currentUserId.ifEmpty { "anonymous" },
+                    userName = userManager.currentUserName,
+                    content = content
+                )
+                noteRepository.addNote(note)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    // Legacy method for compatibility
     fun addNote(content: String, userId: String, userName: String) {
         viewModelScope.launch {
             try {
                 val note = Note(
                     id = UUID.randomUUID().toString(),
                     listId = listId,
-                    itemId = null, // List-level note
+                    itemId = null,
                     userId = userId,
                     userName = userName,
                     content = content
@@ -240,5 +259,9 @@ class ListDetailViewModel @Inject constructor(
                 _uiState.update { it.copy(error = e.message) }
             }
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
     }
 }

@@ -14,7 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,8 +32,38 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showSignOutDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
+    var showNotificationsDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
+
+    // Error snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            snackbarHostState.showSnackbar(error)
+            viewModel.clearError()
+        }
+    }
+
+    // Password change success
+    LaunchedEffect(uiState.passwordChangeSuccess) {
+        if (uiState.passwordChangeSuccess) {
+            snackbarHostState.showSnackbar("Contrasena actualizada correctamente")
+            viewModel.clearPasswordChangeSuccess()
+        }
+    }
+
+    // Handle sign out
+    LaunchedEffect(uiState.signedOut) {
+        if (uiState.signedOut) {
+            navController.navigate("auth") {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Perfil", fontWeight = FontWeight.Bold) },
@@ -52,9 +86,11 @@ fun ProfileScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            if (uiState.isLoading) {
+            if (uiState.isLoading && uiState.profile == null) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
@@ -126,15 +162,15 @@ fun ProfileScreen(
 
                         ProfileOptionCard(
                             icon = Icons.Default.Lock,
-                            title = "Cambiar contraseña",
-                            subtitle = "Actualiza tu contraseña",
-                            onClick = { /* TODO: Navigate to change password */ }
+                            title = "Cambiar contrasena",
+                            subtitle = "Actualiza tu contrasena",
+                            onClick = { viewModel.startChangingPassword() }
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
-                            text = "APLICACIÓN",
+                            text = "APLICACION",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
@@ -144,21 +180,21 @@ fun ProfileScreen(
                             icon = Icons.Default.Notifications,
                             title = "Notificaciones",
                             subtitle = "Gestiona tus notificaciones",
-                            onClick = { /* TODO: Navigate to notifications settings */ }
+                            onClick = { showNotificationsDialog = true }
                         )
 
                         ProfileOptionCard(
                             icon = Icons.Default.Palette,
                             title = "Apariencia",
                             subtitle = "Tema claro u oscuro",
-                            onClick = { /* TODO: Navigate to theme settings */ }
+                            onClick = { showThemeDialog = true }
                         )
 
                         ProfileOptionCard(
                             icon = Icons.Default.Info,
                             title = "Acerca de",
-                            subtitle = "Versión 1.0.0",
-                            onClick = { /* TODO: Show about dialog */ }
+                            subtitle = "Version 1.0.0",
+                            onClick = { showAboutDialog = true }
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -173,7 +209,7 @@ fun ProfileScreen(
                         ) {
                             Icon(Icons.Default.Logout, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Cerrar sesión")
+                            Text("Cerrar sesion")
                         }
 
                         Spacer(modifier = Modifier.height(32.dp))
@@ -186,10 +222,19 @@ fun ProfileScreen(
         if (uiState.isEditing) {
             EditProfileDialog(
                 currentName = uiState.profile?.name ?: "",
+                isLoading = uiState.isLoading,
                 onDismiss = { viewModel.cancelEditing() },
-                onSave = { newName ->
-                    viewModel.updateProfile(newName)
-                }
+                onSave = { newName -> viewModel.updateProfile(newName) }
+            )
+        }
+
+        // Change password dialog
+        if (uiState.isChangingPassword) {
+            ChangePasswordDialog(
+                isLoading = uiState.isLoading,
+                onDismiss = { viewModel.cancelChangingPassword() },
+                onChangePassword = { current, new -> viewModel.changePassword(current, new) },
+                onSendResetEmail = { viewModel.sendPasswordResetEmail() }
             )
         }
 
@@ -197,22 +242,19 @@ fun ProfileScreen(
         if (showSignOutDialog) {
             AlertDialog(
                 onDismissRequest = { showSignOutDialog = false },
-                title = { Text("Cerrar sesión") },
-                text = { Text("¿Estás seguro de que quieres cerrar sesión?") },
+                title = { Text("Cerrar sesion") },
+                text = { Text("Estas seguro de que quieres cerrar sesion?") },
                 confirmButton = {
                     TextButton(
                         onClick = {
                             viewModel.signOut()
                             showSignOutDialog = false
-                            navController.navigate("auth") {
-                                popUpTo(0) { inclusive = true }
-                            }
                         },
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text("Cerrar sesión")
+                        Text("Cerrar sesion")
                     }
                 },
                 dismissButton = {
@@ -222,12 +264,27 @@ fun ProfileScreen(
                 }
             )
         }
+
+        // About dialog
+        if (showAboutDialog) {
+            AboutDialog(onDismiss = { showAboutDialog = false })
+        }
+
+        // Notifications dialog
+        if (showNotificationsDialog) {
+            NotificationsSettingsDialog(onDismiss = { showNotificationsDialog = false })
+        }
+
+        // Theme dialog
+        if (showThemeDialog) {
+            ThemeSettingsDialog(onDismiss = { showThemeDialog = false })
+        }
     }
 }
 
 @Composable
 fun ProfileOptionCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     subtitle: String,
     onClick: () -> Unit
@@ -273,13 +330,14 @@ fun ProfileOptionCard(
 @Composable
 fun EditProfileDialog(
     currentName: String,
+    isLoading: Boolean,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit
 ) {
     var name by remember { mutableStateOf(currentName) }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!isLoading) onDismiss() },
         title = { Text("Editar perfil") },
         text = {
             OutlinedTextField(
@@ -287,14 +345,359 @@ fun EditProfileDialog(
                 onValueChange = { name = it },
                 label = { Text("Nombre") },
                 singleLine = true,
+                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth()
             )
         },
         confirmButton = {
             TextButton(
                 onClick = { onSave(name) },
-                enabled = name.isNotBlank()
+                enabled = name.isNotBlank() && !isLoading
             ) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                } else {
+                    Text("Guardar")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isLoading) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun ChangePasswordDialog(
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+    onChangePassword: (currentPassword: String, newPassword: String) -> Unit,
+    onSendResetEmail: () -> Unit
+) {
+    var currentPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var showCurrentPassword by remember { mutableStateOf(false) }
+    var showNewPassword by remember { mutableStateOf(false) }
+
+    val passwordsMatch = newPassword == confirmPassword
+    val isValid = currentPassword.isNotBlank() && newPassword.length >= 6 && passwordsMatch
+
+    AlertDialog(
+        onDismissRequest = { if (!isLoading) onDismiss() },
+        title = { Text("Cambiar contrasena") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = currentPassword,
+                    onValueChange = { currentPassword = it },
+                    label = { Text("Contrasena actual") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    visualTransformation = if (showCurrentPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showCurrentPassword = !showCurrentPassword }) {
+                            Icon(
+                                if (showCurrentPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("Nueva contrasena") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    visualTransformation = if (showNewPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showNewPassword = !showNewPassword }) {
+                            Icon(
+                                if (showNewPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    supportingText = {
+                        if (newPassword.isNotEmpty() && newPassword.length < 6) {
+                            Text("Minimo 6 caracteres", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirmar contrasena") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    visualTransformation = PasswordVisualTransformation(),
+                    isError = confirmPassword.isNotEmpty() && !passwordsMatch,
+                    supportingText = {
+                        if (confirmPassword.isNotEmpty() && !passwordsMatch) {
+                            Text("Las contrasenas no coinciden", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                TextButton(
+                    onClick = {
+                        onSendResetEmail()
+                        onDismiss()
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Enviar email de recuperacion")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onChangePassword(currentPassword, newPassword) },
+                enabled = isValid && !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                } else {
+                    Text("Cambiar")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isLoading) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun AboutDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    Icons.Default.ShoppingCart,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("ShoppyJuan")
+            }
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Version 1.0.0",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Tu lista de compras colaborativa",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Desarrollado con Kotlin + Jetpack Compose",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "2026 Arkus",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
+}
+
+@Composable
+fun NotificationsSettingsDialog(onDismiss: () -> Unit) {
+    var pushEnabled by remember { mutableStateOf(true) }
+    var itemAddedEnabled by remember { mutableStateOf(true) }
+    var listSharedEnabled by remember { mutableStateOf(true) }
+    var noteAddedEnabled by remember { mutableStateOf(true) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Notificaciones") },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Notificaciones push")
+                    Switch(checked = pushEnabled, onCheckedChange = { pushEnabled = it })
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                Text(
+                    text = "Tipos de notificaciones",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Articulo anadido", style = MaterialTheme.typography.bodyMedium)
+                    Switch(
+                        checked = itemAddedEnabled,
+                        onCheckedChange = { itemAddedEnabled = it },
+                        enabled = pushEnabled
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Lista compartida", style = MaterialTheme.typography.bodyMedium)
+                    Switch(
+                        checked = listSharedEnabled,
+                        onCheckedChange = { listSharedEnabled = it },
+                        enabled = pushEnabled
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Nota anadida", style = MaterialTheme.typography.bodyMedium)
+                    Switch(
+                        checked = noteAddedEnabled,
+                        onCheckedChange = { noteAddedEnabled = it },
+                        enabled = pushEnabled
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun ThemeSettingsDialog(onDismiss: () -> Unit) {
+    var selectedTheme by remember { mutableStateOf("system") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Apariencia") },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedTheme == "system",
+                        onClick = { selectedTheme = "system" }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Automatico", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Seguir ajustes del sistema",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedTheme == "light",
+                        onClick = { selectedTheme = "light" }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Tema claro", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Siempre usar tema claro",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedTheme == "dark",
+                        onClick = { selectedTheme = "dark" }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Tema oscuro", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Siempre usar tema oscuro",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
                 Text("Guardar")
             }
         },
