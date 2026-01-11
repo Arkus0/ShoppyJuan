@@ -1,6 +1,8 @@
 package com.arkus.shoppyjuan.data.local
 
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.arkus.shoppyjuan.data.local.dao.*
 import com.arkus.shoppyjuan.data.local.entity.*
@@ -11,9 +13,11 @@ import com.arkus.shoppyjuan.data.local.entity.*
         ListItemEntity::class,
         RecipeEntity::class,
         FavoriteItemEntity::class,
-        NoteEntity::class
+        NoteEntity::class,
+        FrequentItemEntity::class,
+        PendingSyncEntity::class
     ],
-    version = 2,
+    version = 5,
     exportSchema = true
 )
 abstract class ShoppyDatabase : RoomDatabase() {
@@ -22,8 +26,30 @@ abstract class ShoppyDatabase : RoomDatabase() {
     abstract fun recipeDao(): RecipeDao
     abstract fun favoriteItemDao(): FavoriteItemDao
     abstract fun noteDao(): NoteDao
+    abstract fun frequentItemDao(): FrequentItemDao
+    abstract fun pendingSyncDao(): PendingSyncDao
 
     companion object {
         const val DATABASE_NAME = "shoppy_juan_db"
+
+        @Volatile
+        private var INSTANCE: ShoppyDatabase? = null
+
+        /**
+         * Get database instance for non-DI contexts (e.g., widgets)
+         */
+        fun getInstance(context: Context): ShoppyDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    ShoppyDatabase::class.java,
+                    DATABASE_NAME
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
+                INSTANCE = instance
+                instance
+            }
+        }
     }
 }

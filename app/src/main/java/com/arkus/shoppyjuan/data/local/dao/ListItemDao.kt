@@ -53,4 +53,7 @@ interface ListItemDao {
 
     @Query("UPDATE list_items SET note = :note, updatedAt = :updatedAt WHERE id = :itemId")
     suspend fun updateItemNote(itemId: String, note: String?, updatedAt: Long)
+
+    @Query("UPDATE list_items SET checked = 0 WHERE listId = :listId")
+    suspend fun uncheckAllItems(listId: String)
 }

@@ -146,6 +146,16 @@ dependencies {
     // QR Code generation
     implementation("com.google.zxing:core:3.5.2")
 
+    // Drag & Drop Reorderable
+    implementation("sh.calvin.reorderable:reorderable:1.3.1")
+
+    // Glance Widget
+    implementation("androidx.glance:glance-appwidget:1.0.0")
+    implementation("androidx.glance:glance-material3:1.0.0")
+
+    // PDF Generation
+    implementation("com.itextpdf:itext7-core:7.2.5")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

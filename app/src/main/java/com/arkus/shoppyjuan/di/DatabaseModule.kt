@@ -53,4 +53,14 @@ object DatabaseModule {
     fun provideNoteDao(database: ShoppyDatabase): NoteDao {
         return database.noteDao()
     }
+
+    @Provides
+    fun provideFrequentItemDao(database: ShoppyDatabase): FrequentItemDao {
+        return database.frequentItemDao()
+    }
+
+    @Provides
+    fun providePendingSyncDao(database: ShoppyDatabase): PendingSyncDao {
+        return database.pendingSyncDao()
+    }
 }
