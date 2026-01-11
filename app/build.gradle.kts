@@ -24,8 +24,8 @@ android {
         }
 
         // Supabase config (replace with your values)
-        buildConfigField("String", "SUPABASE_URL", "\"https://your-project.supabase.co\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"your-anon-key\"")
+        buildConfigField("String", "SUPABASE_URL", "\"https://tzdsgohygwhnlmudvenq.supabase.co\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_oJlSTa05s6AN4iW-lvxKig_fY0A1dCF"")
     }
 
     buildTypes {
@@ -124,6 +124,8 @@ dependencies {
 
     // Work Manager (for background sync)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    ksp("androidx.hilt:hilt-compiler:1.1.0")
 
     // CameraX for barcode scanning
     val cameraxVersion = "1.3.1"
@@ -135,6 +137,9 @@ dependencies {
     // ML Kit Barcode Scanning
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
 
+    // ML Kit Text Recognition (OCR for receipts)
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
     implementation("com.google.firebase:firebase-messaging-ktx")
@@ -145,6 +150,16 @@ dependencies {
 
     // QR Code generation
     implementation("com.google.zxing:core:3.5.2")
+
+    // Drag & Drop Reorderable
+    implementation("sh.calvin.reorderable:reorderable:1.3.1")
+
+    // Glance Widget
+    implementation("androidx.glance:glance-appwidget:1.0.0")
+    implementation("androidx.glance:glance-material3:1.0.0")
+
+    // PDF Generation
+    implementation("com.itextpdf:itext7-core:7.2.5")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

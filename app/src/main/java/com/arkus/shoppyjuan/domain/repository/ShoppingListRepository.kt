@@ -29,6 +29,7 @@ interface ShoppingListRepository {
     suspend fun deleteCheckedItems(listId: String)
     suspend fun getItemCount(listId: String): Int
     suspend fun getUncheckedItemCount(listId: String): Int
+    suspend fun updateItemPosition(itemId: String, position: Int)
 
     // Favorites
     fun getFavoriteItems(): Flow<List<FavoriteItem>>

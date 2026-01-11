@@ -24,12 +24,19 @@
     <string name="archive_list">Archivar lista</string>
     <string name="clear_checked">Limpiar marcados</string>
     <string name="clear_all">Limpiar todo</string>
+    <string name="pending_items">%d pendientes</string>
+    <string name="empty_list_title">Lista vacía</string>
+    <string name="empty_list_message">Añade artículos a tu lista de compras</string>
+    <string name="add_first_item">Añadir primer artículo</string>
+    <string name="completed_items">Completados (%d)</string>
+    <string name="pending_section">Pendientes (%d)</string>
 
     <!-- Items -->
     <string name="item_checked">Artículo marcado</string>
     <string name="item_unchecked">Artículo desmarcado</string>
     <string name="edit_item">Editar artículo</string>
     <string name="delete_item">Eliminar artículo</string>
+    <string name="item_not_available">No había</string>
 
     <!-- Recipes -->
     <string name="browse_recipes">Explorar Recetas</string>
@@ -37,6 +44,9 @@
     <string name="add_to_list">Añadir a lista</string>
     <string name="ingredients">Ingredientes</string>
     <string name="instructions">Instrucciones</string>
+    <string name="export_to_list">Exportar a lista</string>
+    <string name="select_list">Seleccionar lista</string>
+    <string name="portions_multiplier">Multiplicador de porciones</string>
 
     <!-- Auth -->
     <string name="login">Iniciar Sesión</string>
@@ -44,6 +54,114 @@
     <string name="email">Email</string>
     <string name="password">Contraseña</string>
     <string name="logout">Cerrar Sesión</string>
+    <string name="logout_confirm">¿Estás seguro de que quieres cerrar sesión?</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="send_reset_email">Enviar email de recuperación</string>
+    <string name="change_password">Cambiar contraseña</string>
+    <string name="current_password">Contraseña actual</string>
+    <string name="new_password">Nueva contraseña</string>
+    <string name="confirm_password">Confirmar contraseña</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Perfil</string>
+    <string name="edit_profile">Editar perfil</string>
+    <string name="username">Nombre de usuario</string>
+    <string name="settings">Configuración</string>
+    <string name="notifications">Notificaciones</string>
+    <string name="theme">Tema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_system">Sistema</string>
+    <string name="language">Idioma</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+    <string name="about">Acerca de</string>
+    <string name="version">Versión</string>
+    <string name="feedback">Enviar feedback</string>
+
+    <!-- Location & Radius -->
+    <string name="location_settings">Ubicación</string>
+    <string name="search_radius">Radio de búsqueda</string>
+    <string name="search_radius_desc">Mostrar precios de supermercados a máximo %d km</string>
+    <string name="km_format">%d km</string>
+    <string name="location_permission_title">Permiso de ubicación</string>
+    <string name="location_permission_message">Necesitamos tu ubicación para mostrarte precios de supermercados cercanos</string>
+    <string name="enable_location">Activar ubicación</string>
+    <string name="location_disabled">Ubicación desactivada</string>
+    <string name="no_location">Sin ubicación</string>
+    <string name="nearby_stores">Tiendas cercanas</string>
+    <string name="distance_format">a %s</string>
+
+    <!-- Supermarket Mode -->
+    <string name="supermarket_mode">Modo Supermercado</string>
+    <string name="supermarket_mode_desc">Interfaz optimizada para compras</string>
+    <string name="keep_screen_on">Mantener pantalla encendida</string>
+    <string name="progress_format">%d%% completado</string>
+    <string name="all_done">¡Todo listo!</string>
+
+    <!-- Price Comparison -->
+    <string name="price_comparison">Comparador de Precios</string>
+    <string name="compare_prices">Comparar precios</string>
+    <string name="by_item">Por Producto</string>
+    <string name="by_store">Por Tienda</string>
+    <string name="optimal">Óptimo</string>
+    <string name="price_coverage">Cobertura de precios</string>
+    <string name="potential_savings">Ahorro potencial</string>
+    <string name="best_price">Mejor precio</string>
+    <string name="cheapest_at">Más barato en %s</string>
+    <string name="no_price_data">Sin datos de precios</string>
+    <string name="analyzing_prices">Analizando precios…</string>
+    <string name="price_difference">Diferencia: %s</string>
+    <string name="visit_stores">Visita %d tienda(s) para el mejor precio</string>
+    <string name="savings_vs_single">Ahorras %s vs ir a una sola tienda</string>
+    <string name="optimal_strategy">Estrategia Óptima</string>
+    <string name="total_cost">Total: %s</string>
+    <string name="products_available">%d productos disponibles</string>
+    <string name="products_not_found">%d no encontrados</string>
+    <string name="cheapest_items_here">%d productos más baratos aquí</string>
+    <string name="recommended">Recomendado</string>
+
+    <!-- Crowdsourcing -->
+    <string name="submit_price">Aportar Precio</string>
+    <string name="upload_receipt">Subir Ticket</string>
+    <string name="product_name">Producto</string>
+    <string name="price_eur">Precio (€)</string>
+    <string name="supermarket">Supermercado</string>
+    <string name="barcode_optional">Código de barras (opcional)</string>
+    <string name="help_community">Ayuda a la comunidad compartiendo precios</string>
+    <string name="upload_receipt_desc">Sube una foto de tu ticket y extraeremos los precios</string>
+    <string name="analyzing_receipt">Analizando ticket…</string>
+    <string name="uploading_image">Subiendo imagen…</string>
+    <string name="extracting_products">Extrayendo productos…</string>
+    <string name="camera">Cámara</string>
+    <string name="gallery">Galería</string>
+    <string name="image_selected">Imagen seleccionada</string>
+    <string name="receipt_tips_title">Consejos</string>
+    <string name="receipt_tips">• Asegúrate de que el ticket esté bien iluminado\n• Captura todo el ticket, incluyendo el total\n• Evita sombras y reflejos</string>
+    <string name="analyze">Analizar</string>
+
+    <!-- Open Prices -->
+    <string name="share_with_open_prices">Compartir con Open Prices</string>
+    <string name="connect_open_prices">Conectar con Open Prices</string>
+    <string name="open_prices_login_desc">Inicia sesión con tu cuenta de Open Food Facts para compartir precios con la comunidad global.</string>
+    <string name="open_prices_info">Open Prices es un proyecto colaborativo de precios gratuito y abierto</string>
+    <string name="open_food_facts_user">Tu usuario de Open Food Facts</string>
+    <string name="no_account_register">¿No tienes cuenta? Regístrate gratis en openfoodfacts.org</string>
+    <string name="share_prices_desc">Comparte los precios de tus tickets con Open Prices para ayudar a la comunidad.</string>
+    <string name="connected_as">Conectado como</string>
+    <string name="pending_to_share">Pendientes</string>
+    <string name="shared_count">Compartidos</string>
+    <string name="share_tickets">Compartir %d tickets</string>
+    <string name="all_tickets_shared">¡Todos los tickets han sido compartidos!</string>
+    <string name="login_to_share">Inicia sesión para compartir</string>
+    <string name="need_off_account">Necesitas una cuenta de Open Food Facts</string>
+    <string name="pending_tickets">Tienes %d tickets pendientes de compartir</string>
+    <string name="sharing_progress">Compartiendo…</string>
+    <string name="sharing_ticket">Compartiendo ticket %d de %d…</string>
+    <string name="auth_error">Error de autenticación: %s</string>
+    <string name="share_error">Error al compartir: %s</string>
+    <string name="share_success">Compartidos %d precios de %d tickets</string>
+    <string name="share_partial">Compartidos %d precios, %d fallidos</string>
 
     <!-- Common -->
     <string name="save">Guardar</string>
@@ -56,8 +174,66 @@
     <string name="error">Error</string>
     <string name="retry">Reintentar</string>
     <string name="empty_list">Lista vacía</string>
+    <string name="back">Volver</string>
+    <string name="close">Cerrar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="yes">Sí</string>
+    <string name="no">No</string>
+    <string name="ok">OK</string>
+    <string name="other">Otro</string>
 
     <!-- Notifications -->
     <string name="notification_channel_name">Actualizaciones de listas</string>
     <string name="notification_channel_desc">Notificaciones de cambios en listas compartidas</string>
+
+    <!-- Widget -->
+    <string name="widget_name">Lista de Compras</string>
+    <string name="widget_description">Muestra tus items pendientes de compra</string>
+
+    <!-- Online/Presence -->
+    <string name="online_users">Usuarios conectados</string>
+    <string name="user_online">%s está conectado</string>
+    <string name="users_online">%d usuarios conectados</string>
+    <string name="you">Tú</string>
+    <string name="online">Conectado</string>
+    <string name="offline">Desconectado</string>
+
+    <!-- Offline Mode -->
+    <string name="offline_mode">Modo sin conexión</string>
+    <string name="offline_banner">Sin conexión - Los cambios se guardarán localmente</string>
+    <string name="syncing">Sincronizando…</string>
+    <string name="sync_complete">Sincronización completa</string>
+    <string name="sync_error">Error de sincronización</string>
+    <string name="pending_changes">%d cambios pendientes</string>
+
+    <!-- Export -->
+    <string name="export_list">Exportar lista</string>
+    <string name="export_format">Formato de exportación</string>
+    <string name="export_pdf">PDF</string>
+    <string name="export_text">Texto plano</string>
+    <string name="export_markdown">Markdown</string>
+    <string name="export_success">Lista exportada correctamente</string>
+    <string name="export_error">Error al exportar</string>
+
+    <!-- Recurring Lists -->
+    <string name="recurring_list">Lista recurrente</string>
+    <string name="recurrence">Recurrencia</string>
+    <string name="daily">Diaria</string>
+    <string name="weekly">Semanal</string>
+    <string name="biweekly">Quincenal</string>
+    <string name="monthly">Mensual</string>
+    <string name="custom">Personalizado</string>
+    <string name="select_days">Seleccionar días</string>
+    <string name="next_occurrence">Próxima: %s</string>
+
+    <!-- Errors -->
+    <string name="error_network">Error de conexión. Revisa tu internet.</string>
+    <string name="error_unknown">Ha ocurrido un error inesperado</string>
+    <string name="error_auth">Error de autenticación</string>
+    <string name="error_permission">Permiso denegado</string>
+    <string name="error_save">Error al guardar</string>
+    <string name="error_load">Error al cargar datos</string>
+    <string name="error_analyze_prices">Error al analizar precios: %s</string>
+    <string name="error_process_receipt">Error al procesar ticket: %s</string>
+    <string name="error_save_price">Error al guardar precio: %s</string>
 </resources>

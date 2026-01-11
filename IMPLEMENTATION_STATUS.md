@@ -1,338 +1,454 @@
-# 📱 ShoppyJuan - Estado de Implementación Android/Kotlin
+# ShoppyJuan - Estado de Implementacion Android/Kotlin
 
-## 📋 Resumen del Proyecto
+## Resumen del Proyecto
 
-Migración completa de PWA (Next.js/TypeScript) a Android nativo en Kotlin.
+Migracion completa de PWA (Next.js/TypeScript) a Android nativo en Kotlin.
 
 **Arquitectura**: MVVM + Clean Architecture
 **UI**: Jetpack Compose + Material 3
-**Base de datos**: Room Database v2
+**Base de datos**: Room Database v7
 **Backend**: Supabase (PostgreSQL, Auth, Realtime, Storage)
-**Inyección de dependencias**: Hilt (Dagger)
+**Inyeccion de dependencias**: Hilt (Dagger)
 
 ---
 
-## ✅ FUNCIONALIDADES IMPLEMENTADAS (100%)
+## FUNCIONALIDADES IMPLEMENTADAS (100%)
 
-### 1. Modo Supermercado ✅
-**Ubicación**: `presentation/supermarket/`
-- ✅ Interfaz full-screen optimizada para compras
-- ✅ Barra de progreso con porcentaje completado
-- ✅ Items agrupados por categoría
-- ✅ Feedback háptico al marcar items
-- ✅ Opción "No había" para items no disponibles
-- ✅ Wake lock (pantalla siempre encendida)
-- ✅ Sección colapsable de items completados
+### 1. Modo Supermercado
+**Ubicacion**: `presentation/supermarket/`
+- Interfaz full-screen optimizada para compras
+- Barra de progreso con porcentaje completado
+- Items agrupados por categoria
+- Feedback haptico al marcar items
+- Opcion "No habia" para items no disponibles
+- Wake lock (pantalla siempre encendida)
+- Seccion colapsable de items completados
 
-**Archivos**:
-- `SupermarketModeScreen.kt` (184 líneas)
-- `SupermarketModeViewModel.kt` (90 líneas)
+### 2. Notas Colaborativas
+**Ubicacion**: `domain/model/Note.kt`, `presentation/components/NotesBottomSheet.kt`
+- Notas a nivel de lista
+- Atribucion de usuario y timestamps
+- Badge indicador con conteo
+- Bottom sheet para gestionar notas
+- Anadir, ver y eliminar notas
+- Integracion con RealtimeManager
 
-### 2. Notas Colaborativas ✅
-**Ubicación**: `domain/model/Note.kt`, `presentation/components/NotesBottomSheet.kt`
-- ✅ Notas a nivel de lista
-- ✅ Atribución de usuario y timestamps
-- ✅ Badge indicador con conteo
-- ✅ Bottom sheet para gestionar notas
-- ✅ Añadir, ver y eliminar notas
-- ✅ Integración con RealtimeManager
+### 3. Indicadores de Presencia
+**Ubicacion**: `presentation/components/PresenceIndicator.kt`
+- Tracking en tiempo real de usuarios online
+- Avatares con indicador de estado
+- Chip de presencia (muestra quien esta activo)
+- Dialogo con lista completa de usuarios
+- Colores de avatar basados en nombre
+- Integracion con Supabase Realtime Presence
 
-**Archivos**:
-- `Note.kt` (modelo)
-- `NoteEntity.kt` (Room)
-- `NoteDao.kt` (DAO)
-- `NoteRepository.kt` + `NoteRepositoryImpl.kt`
-- `NotesBottomSheet.kt` (222 líneas)
+### 4. Pantalla de Perfil
+**Ubicacion**: `presentation/profile/`
+- Display de perfil con avatar generado
+- Editar nombre de usuario (conectado a Supabase Auth)
+- Cambiar contrasena con validacion
+- Enviar email de recuperacion de contrasena
+- Configuracion de notificaciones (dialog funcional)
+- Selector de tema claro/oscuro/automatico (dialog funcional)
+- Dialogo "Acerca de" con info de la app
+- Cerrar sesion con confirmacion
 
-### 3. Indicadores de Presencia ✅
-**Ubicación**: `presentation/components/PresenceIndicator.kt`
-- ✅ Tracking en tiempo real de usuarios online
-- ✅ Avatares con indicador de estado
-- ✅ Chip de presencia (muestra quién está activo)
-- ✅ Diálogo con lista completa de usuarios
-- ✅ Colores de avatar basados en nombre
-- ✅ Integración con Supabase Realtime Presence
+### 5. Exportar Recetas a Lista
+**Ubicacion**: `presentation/recipedetail/`
+- Pantalla de detalle de receta
+- Dialogo de exportacion con selector de lista
+- Multiplicador de cantidades
+- Categorizacion automatica de ingredientes
+- Extraccion inteligente de cantidades y unidades
+- Nota "De receta: [nombre]" en items exportados
 
-**Archivos**:
-- `PresenceIndicator.kt` (225 líneas)
-- Integrado en `ListDetailViewModel.kt`
+### 6. Templates de Listas
+**Ubicacion**: `domain/util/ListTemplates.kt`
+- 4 templates predefinidos
+- Metodo `createListFromTemplate()` en repositorio
+- Items con cantidades y unidades predefinidas
 
-### 4. Pantalla de Perfil ✅
-**Ubicación**: `presentation/profile/`
-- ✅ Display de perfil con avatar generado
-- ✅ Editar nombre de usuario
-- ✅ Opciones de configuración (notificaciones, apariencia, acerca de)
-- ✅ Cambiar contraseña (placeholder)
-- ✅ Cerrar sesión con confirmación
+### 7. Unirse por Codigo
+**Ubicacion**: `data/repository/ShoppingListRepositoryImpl.kt`
+- Metodo `joinListByCode(code, userId)`
+- Busqueda por codigo de 6 caracteres
+- Soporte para deep links configurado en AndroidManifest
+- Generacion automatica de shareCode al crear lista
 
-**Archivos**:
-- `ProfileScreen.kt` (310 líneas)
-- `ProfileViewModel.kt` (90 líneas)
-
-### 5. Exportar Recetas a Lista ✅
-**Ubicación**: `presentation/recipedetail/`
-- ✅ Pantalla de detalle de receta
-- ✅ Diálogo de exportación con selector de lista
-- ✅ Multiplicador de cantidades
-- ✅ Categorización automática de ingredientes
-- ✅ Extracción inteligente de cantidades y unidades
-- ✅ Nota "De receta: [nombre]" en items exportados
-
-**Archivos**:
-- `RecipeDetailScreen.kt` (182 líneas)
-- `RecipeDetailViewModel.kt` (92 líneas)
-- `RecipeRepositoryImpl.kt` (métodos `exportIngredientsToList`, `extractQuantity`, `extractUnit`)
-
-### 6. Templates de Listas ✅
-**Ubicación**: `domain/util/ListTemplates.kt`
-- ✅ 4 templates predefinidos:
-  - Compra Semanal (10 items)
-  - Barbacoa (10 items)
-  - Desayuno (10 items)
-  - Fiesta (10 items)
-- ✅ Método `createListFromTemplate()` en repositorio
-- ✅ Items con cantidades y unidades predefinidas
-
-**Archivos**:
-- `ListTemplates.kt` (70 líneas)
-- `ShoppingListRepositoryImpl.kt` (método `createListFromTemplate`)
-
-### 7. Unirse por Código ✅
-**Ubicación**: `data/repository/ShoppingListRepositoryImpl.kt`
-- ✅ Método `joinListByCode(code, userId)`
-- ✅ Búsqueda por código de 6 caracteres
-- ✅ Soporte para deep links configurado en AndroidManifest
-- ✅ Generación automática de shareCode al crear lista
-
-**Deep link**: `https://shoppyjuan.app/join/{code}`
-
-### 8. Navegación Completa ✅
-**Ubicación**: `navigation/Navigation.kt`
-- ✅ Todas las pantallas conectadas
-- ✅ Rutas con parámetros (listId, recipeId)
-- ✅ Navigation Compose con type-safe arguments
-
-**Rutas implementadas**:
-- `/auth` - Autenticación
-- `/home` - Lista de listas
-- `/list/{listId}` - Detalle de lista
-- `/supermarket/{listId}` - Modo supermercado
-- `/recipes` - Recetas
-- `/recipe/{recipeId}` - Detalle de receta
-- `/favorites` - Favoritos
-- `/profile` - Perfil
+### 8. Navegacion Completa
+**Ubicacion**: `navigation/Navigation.kt`
+- Todas las pantallas conectadas
+- Rutas con parametros (listId, recipeId)
+- Navigation Compose con type-safe arguments
 
 ---
 
-## ⚠️ PENDIENTE: Integración con Backend
+## NUEVAS FUNCIONALIDADES AVANZADAS
 
-### 🔧 Configuración Requerida
+### 9. Widget de Android (Home Screen)
+**Ubicacion**: `widget/ShoppingListWidget.kt`
+- Widget usando Glance API (Material 3)
+- Muestra lista activa con items pendientes
+- Preview configurable para el selector de widgets
+- Actualiza cada 30 minutos
+- Tap para abrir la app
+- Muestra hasta 8 items con indicador de mas
 
-#### 1. Supabase
-**Archivo**: `android/app/build.gradle.kts` (líneas 27-28)
+### 10. Exportar a PDF/Texto/Markdown
+**Ubicacion**: `domain/export/ListExporter.kt`
+- Exportar a PDF con formato profesional
+- Exportar a texto plano (.txt)
+- Exportar a Markdown (.md)
+- Items agrupados por categoria
+- Estadisticas de completado
+- Dialogo selector de formato
+- Compartir via Intent
+
+### 11. Modo Offline Completo
+**Ubicacion**: `data/sync/`
+- `NetworkMonitor.kt` - Observa estado de red en tiempo real
+- `SyncManager.kt` - Gestiona cola de sincronizacion
+- `OfflineSyncWorker.kt` - Worker para sync en background
+- `PendingSyncEntity.kt` - Cola de acciones pendientes
+- Banner de estado offline en UI
+- Sync automatico al recuperar conexion
+- Retry con backoff exponencial
+
+### 12. Listas Recurrentes
+**Ubicacion**: `domain/model/RecurrenceSettings.kt`, `data/worker/RecurringListWorker.kt`
+- Configuracion de recurrencia (diaria, semanal, quincenal, mensual, custom)
+- Seleccion de dias de la semana
+- Reset automatico de items al repetir
+- Notificaciones de recordatorio
+- Calculo de proxima ocurrencia
+- WorkManager para ejecucion en background
+
+### 13. Drag & Drop para Reorganizar Items
+**Ubicacion**: `presentation/components/ReorderableItemList.kt`
+- Arrastrar y soltar items
+- Feedback haptico al mover
+- Persistencia de posicion
+- Libreria: sh.calvin.reorderable
+
+### 14. Swipe Gestures
+**Ubicacion**: `presentation/components/SwipeableItemCard.kt`
+- Deslizar derecha: marcar/desmarcar item
+- Deslizar izquierda: eliminar item
+- Animaciones de feedback visual
+- Colores indicativos de accion
+
+### 15. Busqueda Global
+**Ubicacion**: `presentation/components/GlobalSearchBar.kt`
+- Buscar en listas, items y recetas
+- Resultados agrupados por tipo
+- Iconos distintivos por tipo
+- Navegacion directa al resultado
+
+### 16. Items Frecuentes y Sugerencias
+**Ubicacion**: `data/repository/FrequentItemRepository.kt`
+- Tracking de items usados frecuentemente
+- Sugerencias basadas en historial
+- Busqueda en items frecuentes
+- Auto-completado al agregar items
+
+### 17. Sistema de Feedback
+**Ubicacion**: `presentation/components/FeedbackDialog.kt`
+- Tipos de feedback: bug, sugerencia, general
+- Selector de calificacion con emojis
+- Campo de texto para descripcion
+- Genera email listo para enviar
+
+---
+
+## ARQUITECTURA Y OPTIMIZACIONES
+
+### SupabaseModule para Hilt
+**Ubicacion**: `di/SupabaseModule.kt`
+- Configuracion centralizada de SupabaseClient
+- Auth, Postgrest, Realtime y Storage instalados
+- Auto-refresh de tokens habilitado
+- Auto-load from storage habilitado
+
+### UserManager Centralizado
+**Ubicacion**: `domain/user/UserManager.kt`
+- Gestion centralizada de informacion de usuario
+- CurrentUser data class con id, email, name, avatarUrl
+- Metodos para obtener displayName y avatar color
+- Observacion de estado de autenticacion
+- ELIMINA TODOS LOS IDs HARDCODEADOS
+
+### AuthRepository Mejorado
+**Ubicacion**: `data/auth/AuthRepository.kt`
+- AuthState sealed class para observar estado
+- Observacion de SessionStatus de Supabase
+- Metodo updatePassword para cambiar contrasena
+- Metodo sendPasswordResetEmail
+- getUserDisplayName helper
+- parseAuthError para mensajes user-friendly en espanol
+
+### Componentes Extraidos
+**Ubicacion**: `presentation/components/`
+- `ItemCard.kt` - Card de item con animaciones y estados
+- `ItemCardCompact.kt` - Version compacta para listas densas
+- `AddItemDialog.kt` - Dialogo con entrada de voz y barcode
+- `QuickAddItemField.kt` - Campo de adicion rapida
+- `SwipeableItemCard.kt` - Card con gestos de deslizar
+- `ReorderableItemList.kt` - Lista con drag & drop
+- `GlobalSearchBar.kt` - Barra de busqueda global
+- `ExportListDialog.kt` - Dialogo de exportacion
+- `FeedbackDialog.kt` - Dialogo de feedback
+- `RecurrenceSettingsDialog.kt` - Configurar listas recurrentes
+- `OfflineStatusBanner.kt` - Banner de estado offline
+
+---
+
+## Estructura del Proyecto Actualizada
+
+```
+app/src/main/java/com/arkus/shoppyjuan/
+|-- data/
+|   |-- auth/
+|   |   |__ AuthRepository.kt
+|   |-- barcode/
+|   |-- local/
+|   |   |-- dao/
+|   |   |   |-- ShoppingListDao.kt
+|   |   |   |-- ListItemDao.kt
+|   |   |   |-- RecipeDao.kt
+|   |   |   |-- FavoriteItemDao.kt
+|   |   |   |-- NoteDao.kt
+|   |   |   |-- FrequentItemDao.kt     # NUEVO
+|   |   |   |__ PendingSyncDao.kt      # NUEVO
+|   |   |-- entity/
+|   |   |   |-- ShoppingListEntity.kt  # +recurrence
+|   |   |   |-- FrequentItemEntity.kt  # NUEVO
+|   |   |   |__ PendingSyncEntity.kt   # NUEVO
+|   |   |__ ShoppyDatabase.kt          # DB v5
+|   |-- push/                          # FCM Service
+|   |-- realtime/                      # Supabase Realtime
+|   |-- remote/
+|   |   |-- api/                       # MealDB API
+|   |   |__ mapper/
+|   |-- repository/
+|   |   |-- ShoppingListRepositoryImpl.kt
+|   |   |__ FrequentItemRepository.kt  # NUEVO
+|   |-- speech/                        # Voice input
+|   |-- sync/                          # NUEVO
+|   |   |-- NetworkMonitor.kt
+|   |   |-- SyncManager.kt
+|   |   |__ OfflineSyncWorker.kt
+|   |__ worker/                        # NUEVO
+|       |__ RecurringListWorker.kt
+|-- di/
+|   |-- DatabaseModule.kt              # +PendingSyncDao
+|   |-- NetworkModule.kt
+|   |-- RepositoryModule.kt
+|   |__ SupabaseModule.kt
+|-- domain/
+|   |-- export/                        # NUEVO
+|   |   |__ ListExporter.kt
+|   |-- model/
+|   |   |__ RecurrenceSettings.kt      # NUEVO
+|   |-- repository/
+|   |-- user/
+|   |   |__ UserManager.kt
+|   |__ util/
+|       |-- ListTemplates.kt
+|       |__ ProductCategory.kt
+|-- navigation/
+|   |__ Navigation.kt
+|-- widget/                            # NUEVO
+|   |__ ShoppingListWidget.kt
+|__ presentation/
+    |-- auth/
+    |-- components/
+    |   |-- AddItemDialog.kt
+    |   |-- BarcodeScannerScreen.kt
+    |   |-- BottomNavigationBar.kt
+    |   |-- ExportListDialog.kt        # NUEVO
+    |   |-- FeedbackDialog.kt          # NUEVO
+    |   |-- GlobalSearchBar.kt         # NUEVO
+    |   |-- ItemCard.kt
+    |   |-- NotesBottomSheet.kt
+    |   |-- OfflineStatusBanner.kt     # NUEVO
+    |   |-- PresenceIndicator.kt
+    |   |-- RecurrenceSettingsDialog.kt # NUEVO
+    |   |-- ReorderableItemList.kt     # NUEVO
+    |   |-- ShareListDialog.kt
+    |   |-- SwipeableItemCard.kt       # NUEVO
+    |   |__ VoiceInputButton.kt
+    |-- favorites/
+    |-- home/
+    |-- listdetail/
+    |-- profile/
+    |-- recipedetail/
+    |-- recipes/
+    |__ supermarket/
+```
+
+---
+
+## Configuracion Requerida
+
+### 1. Supabase
+**Archivo**: `app/build.gradle.kts` (lineas 27-28)
 
 ```kotlin
 buildConfigField("String", "SUPABASE_URL", "\"https://your-project.supabase.co\"")
 buildConfigField("String", "SUPABASE_ANON_KEY", "\"your-anon-key\"")
 ```
 
-**Obtener credenciales**:
-1. Ve a https://supabase.com/dashboard
-2. Selecciona tu proyecto
-3. Settings → API
-4. Copia URL y anon/public key
-
-#### 2. Firebase Cloud Messaging (Push Notifications)
-**Archivo**: `android/app/google-services.json` (debe crearse)
-
-**Obtener**:
-1. Ve a https://console.firebase.google.com
-2. Crea/selecciona proyecto
-3. Project Settings → General → Download google-services.json
-4. Coloca en `android/app/`
-
-**Firebase Messaging Service ya implementado**:
-- `data/push/FirebaseMessagingService.kt`
-- Maneja: `item_added`, `item_checked`, `list_shared`, `note_added`
+### 2. Firebase Cloud Messaging
+**Archivo**: `app/google-services.json` (debe crearse)
 
 ---
 
-## 🔨 TODOs Marcados en el Código
+## Estadisticas Actualizadas
 
-Busca `// TODO:` en estos archivos:
+- **Total archivos**: 115+ archivos Kotlin
+- **Lineas de codigo**: ~14,000 lineas
+- **Pantallas**: 9 pantallas principales
+- **Componentes reutilizables**: 22
+- **Repositorios**: 6 (Shopping List, Recipe, Note, Auth, FrequentItem, Price)
+- **Database**: Room v7 con 12 tablas
+- **Dependencias**: 38+ librerias
+- **Workers**: 2 (OfflineSync, RecurringList)
+- **APIs externas**: Open Prices, Open Food Facts, TheMealDB
 
-### AuthRepository (No implementado aún)
+---
+
+## Dependencias Nuevas
+
 ```kotlin
-// TODO: Conectar con Supabase Auth
-// Archivos que lo necesitan:
-// - ProfileViewModel.kt
-// - ListDetailViewModel.kt
-// - ListDetailScreen.kt
-```
+// Drag & Drop Reorderable
+implementation("sh.calvin.reorderable:reorderable:1.3.1")
 
-### IDs de Usuario Hardcodeados
-```kotlin
-// TODO: Reemplazar "current_user_id" con usuario real
-// Ubicaciones:
-// - ListDetailViewModel.kt:119, 181, 182
-// - ListDetailScreen.kt:127, 181, 192, 207
-// - SupermarketModeViewModel.kt (comentarios)
-```
+// Glance Widget
+implementation("androidx.glance:glance-appwidget:1.0.0")
+implementation("androidx.glance:glance-material3:1.0.0")
 
-### Colaboradores en Listas
-```kotlin
-// TODO: Add user to list collaborators in Supabase
-// Ubicación: ShoppingListRepositoryImpl.kt:90
-```
-
-### Nombres de Usuario Real
-```kotlin
-// TODO: Get real name from user service
-// Ubicación: ListDetailViewModel.kt:124
-```
-
-### Opciones de Perfil
-```kotlin
-// TODO: Navigate to change password
-// TODO: Navigate to notifications settings
-// TODO: Navigate to theme settings
-// TODO: Show about dialog
-// Ubicación: ProfileScreen.kt
+// PDF Generation
+implementation("com.itextpdf:itext7-core:7.2.5")
 ```
 
 ---
 
-## 📦 Estructura del Proyecto
+## Optimizaciones de Rendimiento
 
+1. **ListDetailViewModel**: Reduccion de 3 queries a 1 para items
+2. **RecipesViewModel**: Cache de busquedas + debounce de 300ms
+3. **Componentes modulares**: ItemCard y AddItemDialog extraidos
+4. **UserManager centralizado**: Elimina IDs hardcodeados
+5. **AuthRepository mejorado**: Mejor manejo de errores
+6. **Actualizaciones optimistas**: Favoritos y eliminaciones
+7. **Offline queue**: Cambios se guardan localmente y sincronizan despues
+8. **Network monitoring**: Estado de red en tiempo real
+
+---
+
+## NUEVAS FUNCIONALIDADES - Comparador de Precios
+
+### 18. Comparador de Precios Inteligente
+**Ubicacion**: `data/repository/PriceRepository.kt`, `domain/price/`
+- Integracion con Open Prices API (prices.openfoodfacts.org)
+- Busqueda fuzzy con algoritmo Levenshtein para matching de productos
+- Analisis de lista completa con recomendaciones por tienda
+- Estrategia optima multi-tienda para maximizar ahorro
+- Cobertura de precios y calculo de ahorro potencial
+- Cache local de precios para uso offline
+
+### 19. Crowdsourcing de Precios
+**Ubicacion**: `data/ocr/ReceiptAnalyzer.kt`, `presentation/prices/`
+- Subir precios manualmente
+- Escaneo de tickets con OCR (ML Kit Text Recognition)
+- Extraccion automatica de productos y precios
+- Deteccion de cadena de supermercado (Mercadona, Carrefour, DIA, etc.)
+- Sistema de verificacion/confianza de precios
+- Estadisticas de contribucion por usuario
+
+### 20. Contribucion a Open Prices
+**Ubicacion**: `data/remote/OpenPricesContributor.kt`
+- Autenticacion con cuenta Open Food Facts
+- Subida de precios individuales a la base de datos global
+- Contribucion masiva desde tickets procesados
+- Subida de imagenes de tickets como prueba
+- Tracking de contribuciones pendientes
+- Estadisticas de precios compartidos
+- Ayuda a la comunidad global de comparacion de precios
+
+### Archivos Nuevos de Precios:
 ```
-app/src/main/java/com/arkus/shoppyjuan/
-├── data/
-│   ├── auth/                    # ⚠️ AuthRepository pendiente
-│   ├── barcode/                 # ✅ Escaneo de códigos
-│   ├── local/
-│   │   ├── dao/                 # ✅ Room DAOs (6 archivos)
-│   │   ├── entity/              # ✅ Entidades Room (5 archivos)
-│   │   └── ShoppyDatabase.kt    # ✅ DB v2 con Notes
-│   ├── push/                    # ✅ FCM Service
-│   ├── realtime/                # ✅ Supabase Realtime
-│   ├── remote/
-│   │   ├── api/                 # ✅ MealDB API
-│   │   └── mapper/              # ✅ Mappers recetas
-│   ├── repository/              # ✅ Implementations (4)
-│   └── speech/                  # ✅ Voice input
-├── di/                          # ✅ Hilt modules (3)
-├── domain/
-│   ├── model/                   # ✅ Models (6 archivos)
-│   ├── repository/              # ✅ Interfaces (4)
-│   └── util/
-│       ├── ListTemplates.kt     # ✅ 4 templates
-│       └── ProductCategory.kt   # ✅ 700+ productos
-├── navigation/
-│   └── Navigation.kt            # ✅ Navegación completa
-└── presentation/
-    ├── auth/                    # ✅ Login/Register
-    ├── components/              # ✅ 4 componentes
-    ├── favorites/               # ✅ Favoritos
-    ├── home/                    # ✅ Home screen
-    ├── listdetail/              # ✅ Con notas y presencia
-    ├── profile/                 # ✅ Perfil completo
-    ├── recipedetail/            # ✅ Exportar receta
-    ├── recipes/                 # ✅ Lista de recetas
-    └── supermarket/             # ✅ Modo supermercado
+data/
+|-- local/
+|   |-- dao/PriceDao.kt
+|   |-- entity/PriceEntities.kt (Store, PriceRecord, Receipt, ReceiptItem, Contributor)
+|-- ocr/
+|   |__ ReceiptAnalyzer.kt
+|-- remote/
+|   |-- api/OpenPricesApi.kt
+|   |__ OpenPricesContributor.kt
+|-- repository/
+|   |__ PriceRepository.kt
+domain/
+|-- price/
+|   |-- PriceAnalyzer.kt
+|   |__ (PriceAnalysisResult, OptimalShoppingStrategy, etc.)
+|-- util/
+|   |__ FuzzySearch.kt
+presentation/
+|-- prices/
+|   |-- PriceComparisonScreen.kt
+|   |-- PriceComparisonViewModel.kt
+|   |__ PriceDialogs.kt
 ```
 
 ---
 
-## 🚀 Próximos Pasos
+## NUEVAS FUNCIONALIDADES - Idioma y Ubicacion
 
-### Prioridad Alta
-1. **Implementar AuthRepository**
-   - Conectar con Supabase Auth
-   - Login/Register/Logout
-   - Gestión de sesión
-   - Obtener usuario actual
+### 21. Selector de Idioma (Espanol/Ingles)
+**Ubicacion**: `domain/settings/UserPreferencesManager.kt`, `presentation/profile/ProfileScreen.kt`
+- Soporte completo para Espanol e Ingles
+- Strings localizados en `values/strings.xml` (ES) y `values-en/strings.xml` (EN)
+- Selector de idioma en pantalla de Perfil
+- Persistencia de preferencia con DataStore
+- Cambio dinamico sin reiniciar app
 
-2. **Configurar Supabase**
-   - Añadir URL y Key en build.gradle.kts
-   - Crear tablas en Supabase (si no existen):
-     - `shopping_lists`
-     - `list_items`
-     - `recipes`
-     - `favorite_items`
-     - `notes`
+### 22. Filtrado por Radio de Busqueda
+**Ubicacion**: `data/location/LocationManager.kt`, `data/repository/PriceRepository.kt`
+- Configuracion de radio de busqueda (1-50 km)
+- Slider visual en Perfil para ajustar distancia
+- LocationManager con FusedLocationProviderClient
+- Filtrado automatico de precios por distancia
+- Calculo de distancia con formula Haversine
+- Soporte para ubicacion en tiempo real
 
-3. **Configurar Firebase**
-   - Añadir google-services.json
-   - Configurar FCM para push notifications
-
-### Prioridad Media
-4. **Conectar IDs de Usuario**
-   - Reemplazar todos los "current_user_id"
-   - Obtener nombres reales de usuarios
-
-5. **Sistema de Colaboradores**
-   - Tabla `list_collaborators` en Supabase
-   - Implementar añadir/remover colaboradores
-   - Permisos de lista
-
-### Prioridad Baja
-6. **Opciones de Perfil**
-   - Cambiar contraseña
-   - Configuración de notificaciones
-   - Selector de tema (claro/oscuro)
-   - Pantalla "Acerca de"
-
-7. **Testing**
-   - Unit tests para ViewModels
-   - Integration tests para Repositories
-   - UI tests con Compose Test
+### Archivos Nuevos de Idioma/Ubicacion:
+```
+app/src/main/
+|-- res/
+|   |-- values/strings.xml (Espanol - default)
+|   |-- values-en/strings.xml (Ingles)
+|-- java/.../
+|   |-- domain/settings/
+|   |   |__ UserPreferencesManager.kt
+|   |-- data/location/
+|   |   |__ LocationManager.kt
+```
 
 ---
 
-## 📊 Estadísticas
+## TODOs para Futuras Versiones
 
-- **Total archivos**: 60+ archivos Kotlin
-- **Líneas de código**: ~4,500 líneas
-- **Pantallas**: 8 pantallas principales
-- **Componentes reutilizables**: 4
-- **Repositorios**: 4 (Shopping List, Recipe, Note, Auth pendiente)
-- **Database**: Room v2 con 5 tablas
-- **Dependencias**: 30+ librerías
+1. **Historial de Compras** - Guardar y ver compras anteriores
+2. **Compartir por Email** - Enviar lista por correo electronico
+3. **Presupuesto** - Establecer limite y tracking de gastos
+4. **Wear OS Companion** - App para smartwatch
+5. **Google Assistant** - Comandos de voz con Assistant
 
 ---
 
-## 🔗 Referencias Útiles
-
-### Documentación
-- [Supabase Kotlin](https://supabase.com/docs/reference/kotlin/introduction)
-- [Jetpack Compose](https://developer.android.com/jetpack/compose)
-- [Room Database](https://developer.android.com/training/data-storage/room)
-- [Hilt](https://developer.android.com/training/dependency-injection/hilt-android)
-- [Navigation Compose](https://developer.android.com/jetpack/compose/navigation)
-
-### APIs Externas
-- [TheMealDB API](https://www.themealdb.com/api.php)
-- [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging)
-
----
-
-## 📝 Notas Importantes
-
-1. **Base de datos v2**: El proyecto usa Room v2. Si cambias entidades, incrementa la versión en `ShoppyDatabase.kt`.
-
-2. **Fallback destructive**: Actualmente usa `.fallbackToDestructiveMigration()` - considera implementar migraciones propias para producción.
-
-3. **BuildConfig**: El proyecto usa `buildConfig = true` para acceder a variables de configuración.
-
-4. **Deep Links**: Configurados en AndroidManifest para `https://shoppyjuan.app/join/{code}`.
-
-5. **Material 3**: Todo el UI usa Material 3 con tema dinámico.
-
-6. **Categorización automática**: 700+ productos mapeados con emojis en `ProductCategory.kt`.
-
----
-
-## 🎯 Para Nueva Conversación
+## Para Nueva Conversacion
 
 **Prompt sugerido**:
 ```
@@ -340,16 +456,14 @@ Necesito continuar el desarrollo de ShoppyJuan Android.
 Lee el archivo IMPLEMENTATION_STATUS.md para contexto completo.
 
 Quiero empezar con:
-1. Implementar AuthRepository conectado a Supabase
-2. Configurar las credenciales de Supabase y Firebase
-3. [Tu objetivo específico]
+1. [Tu objetivo especifico]
 
-El código está en la branch: claude/migrate-pwa-kotlin-bLzO3
+El codigo esta en la branch: claude/migrate-pwa-kotlin-HQHim
 ```
 
 ---
 
-**Fecha de última actualización**: 2026-01-11
-**Branch**: `claude/migrate-pwa-kotlin-bLzO3`
-**Estado**: ✅ Todas las funcionalidades críticas implementadas
-**Falta**: ⚠️ Integración con backend (Supabase/Firebase)
+**Fecha de ultima actualizacion**: 2026-01-11
+**Branch**: `claude/migrate-pwa-kotlin-HQHim`
+**Estado**: TODAS LAS FUNCIONALIDADES CORE + AVANZADAS IMPLEMENTADAS
+**Pendiente**: Configurar credenciales de Supabase/Firebase + TODOs opcionales

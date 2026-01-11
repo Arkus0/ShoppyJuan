@@ -38,4 +38,34 @@ interface ShoppingListDao {
 
     @Query("DELETE FROM shopping_lists")
     suspend fun deleteAll()
+
+    // Recurrence queries
+    @Query("SELECT * FROM shopping_lists WHERE isRecurring = 1 AND nextRecurrenceAt IS NOT NULL")
+    fun getRecurringLists(): Flow<List<ShoppingListEntity>>
+
+    @Query("""
+        UPDATE shopping_lists
+        SET isRecurring = :isRecurring,
+            recurrenceSettingsJson = :settingsJson,
+            nextRecurrenceAt = :nextRecurrenceAt
+        WHERE id = :listId
+    """)
+    suspend fun setRecurrenceSettings(
+        listId: String,
+        isRecurring: Boolean,
+        settingsJson: String?,
+        nextRecurrenceAt: Long?
+    )
+
+    @Query("""
+        UPDATE shopping_lists
+        SET nextRecurrenceAt = :nextRecurrenceAt,
+            lastResetAt = :lastResetAt
+        WHERE id = :listId
+    """)
+    suspend fun updateRecurrence(
+        listId: String,
+        nextRecurrenceAt: Long,
+        lastResetAt: Long
+    )
 }

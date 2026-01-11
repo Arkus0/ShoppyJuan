@@ -159,6 +159,10 @@ class ShoppingListRepositoryImpl @Inject constructor(
         return listItemDao.getUncheckedItemCount(listId)
     }
 
+    override suspend fun updateItemPosition(itemId: String, position: Int) {
+        listItemDao.updatePosition(itemId, position)
+    }
+
     // Favorites
     override fun getFavoriteItems(): Flow<List<FavoriteItem>> {
         return favoriteItemDao.getAllFavorites().map { entities ->

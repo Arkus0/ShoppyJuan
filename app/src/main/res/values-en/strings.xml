@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShoppyJuan</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_lists">Lists</string>
+    <string name="nav_recipes">Recipes</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Shopping Lists -->
+    <string name="my_lists">My Lists</string>
+    <string name="new_list">New List</string>
+    <string name="list_name">List name</string>
+    <string name="add_item">Add item</string>
+    <string name="item_name">Item name</string>
+    <string name="quantity">Quantity</string>
+    <string name="unit">Unit</string>
+    <string name="category">Category</string>
+    <string name="notes">Notes</string>
+    <string name="share_list">Share list</string>
+    <string name="delete_list">Delete list</string>
+    <string name="archive_list">Archive list</string>
+    <string name="clear_checked">Clear checked</string>
+    <string name="clear_all">Clear all</string>
+    <string name="pending_items">%d pending</string>
+    <string name="empty_list_title">Empty list</string>
+    <string name="empty_list_message">Add items to your shopping list</string>
+    <string name="add_first_item">Add first item</string>
+    <string name="completed_items">Completed (%d)</string>
+    <string name="pending_section">Pending (%d)</string>
+
+    <!-- Items -->
+    <string name="item_checked">Item checked</string>
+    <string name="item_unchecked">Item unchecked</string>
+    <string name="edit_item">Edit item</string>
+    <string name="delete_item">Delete item</string>
+    <string name="item_not_available">Not available</string>
+
+    <!-- Recipes -->
+    <string name="browse_recipes">Browse Recipes</string>
+    <string name="my_recipes">My Recipes</string>
+    <string name="add_to_list">Add to list</string>
+    <string name="ingredients">Ingredients</string>
+    <string name="instructions">Instructions</string>
+    <string name="export_to_list">Export to list</string>
+    <string name="select_list">Select list</string>
+    <string name="portions_multiplier">Portions multiplier</string>
+
+    <!-- Auth -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="logout">Logout</string>
+    <string name="logout_confirm">Are you sure you want to logout?</string>
+    <string name="forgot_password">Forgot your password?</string>
+    <string name="send_reset_email">Send recovery email</string>
+    <string name="change_password">Change password</string>
+    <string name="current_password">Current password</string>
+    <string name="new_password">New password</string>
+    <string name="confirm_password">Confirm password</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Profile</string>
+    <string name="edit_profile">Edit profile</string>
+    <string name="username">Username</string>
+    <string name="settings">Settings</string>
+    <string name="notifications">Notifications</string>
+    <string name="theme">Theme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+    <string name="language">Language</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+    <string name="about">About</string>
+    <string name="version">Version</string>
+    <string name="feedback">Send feedback</string>
+
+    <!-- Location & Radius -->
+    <string name="location_settings">Location</string>
+    <string name="search_radius">Search radius</string>
+    <string name="search_radius_desc">Show prices from supermarkets within %d km</string>
+    <string name="km_format">%d km</string>
+    <string name="location_permission_title">Location permission</string>
+    <string name="location_permission_message">We need your location to show you prices from nearby supermarkets</string>
+    <string name="enable_location">Enable location</string>
+    <string name="location_disabled">Location disabled</string>
+    <string name="no_location">No location</string>
+    <string name="nearby_stores">Nearby stores</string>
+    <string name="distance_format">%s away</string>
+
+    <!-- Supermarket Mode -->
+    <string name="supermarket_mode">Supermarket Mode</string>
+    <string name="supermarket_mode_desc">Optimized shopping interface</string>
+    <string name="keep_screen_on">Keep screen on</string>
+    <string name="progress_format">%d%% complete</string>
+    <string name="all_done">All done!</string>
+
+    <!-- Price Comparison -->
+    <string name="price_comparison">Price Comparison</string>
+    <string name="compare_prices">Compare prices</string>
+    <string name="by_item">By Product</string>
+    <string name="by_store">By Store</string>
+    <string name="optimal">Optimal</string>
+    <string name="price_coverage">Price coverage</string>
+    <string name="potential_savings">Potential savings</string>
+    <string name="best_price">Best price</string>
+    <string name="cheapest_at">Cheapest at %s</string>
+    <string name="no_price_data">No price data</string>
+    <string name="analyzing_prices">Analyzing prices…</string>
+    <string name="price_difference">Difference: %s</string>
+    <string name="visit_stores">Visit %d store(s) for the best price</string>
+    <string name="savings_vs_single">Save %s vs going to a single store</string>
+    <string name="optimal_strategy">Optimal Strategy</string>
+    <string name="total_cost">Total: %s</string>
+    <string name="products_available">%d products available</string>
+    <string name="products_not_found">%d not found</string>
+    <string name="cheapest_items_here">%d products cheapest here</string>
+    <string name="recommended">Recommended</string>
+
+    <!-- Crowdsourcing -->
+    <string name="submit_price">Submit Price</string>
+    <string name="upload_receipt">Upload Receipt</string>
+    <string name="product_name">Product</string>
+    <string name="price_eur">Price (€)</string>
+    <string name="supermarket">Supermarket</string>
+    <string name="barcode_optional">Barcode (optional)</string>
+    <string name="help_community">Help the community by sharing prices</string>
+    <string name="upload_receipt_desc">Upload a photo of your receipt and we\'ll extract the prices</string>
+    <string name="analyzing_receipt">Analyzing receipt…</string>
+    <string name="uploading_image">Uploading image…</string>
+    <string name="extracting_products">Extracting products…</string>
+    <string name="camera">Camera</string>
+    <string name="gallery">Gallery</string>
+    <string name="image_selected">Image selected</string>
+    <string name="receipt_tips_title">Tips</string>
+    <string name="receipt_tips">• Make sure the receipt is well lit\n• Capture the entire receipt, including the total\n• Avoid shadows and reflections</string>
+    <string name="analyze">Analyze</string>
+
+    <!-- Open Prices -->
+    <string name="share_with_open_prices">Share with Open Prices</string>
+    <string name="connect_open_prices">Connect with Open Prices</string>
+    <string name="open_prices_login_desc">Login with your Open Food Facts account to share prices with the global community.</string>
+    <string name="open_prices_info">Open Prices is a free and open collaborative price project</string>
+    <string name="open_food_facts_user">Your Open Food Facts username</string>
+    <string name="no_account_register">Don\'t have an account? Register free at openfoodfacts.org</string>
+    <string name="share_prices_desc">Share your receipt prices with Open Prices to help the community.</string>
+    <string name="connected_as">Connected as</string>
+    <string name="pending_to_share">Pending</string>
+    <string name="shared_count">Shared</string>
+    <string name="share_tickets">Share %d receipts</string>
+    <string name="all_tickets_shared">All receipts have been shared!</string>
+    <string name="login_to_share">Login to share</string>
+    <string name="need_off_account">You need an Open Food Facts account</string>
+    <string name="pending_tickets">You have %d receipts pending to share</string>
+    <string name="sharing_progress">Sharing…</string>
+    <string name="sharing_ticket">Sharing receipt %d of %d…</string>
+    <string name="auth_error">Authentication error: %s</string>
+    <string name="share_error">Share error: %s</string>
+    <string name="share_success">Shared %d prices from %d receipts</string>
+    <string name="share_partial">Shared %d prices, %d failed</string>
+
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="share">Share</string>
+    <string name="search">Search</string>
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="retry">Retry</string>
+    <string name="empty_list">Empty list</string>
+    <string name="back">Back</string>
+    <string name="close">Close</string>
+    <string name="confirm">Confirm</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="ok">OK</string>
+    <string name="other">Other</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">List updates</string>
+    <string name="notification_channel_desc">Notifications for shared list changes</string>
+
+    <!-- Widget -->
+    <string name="widget_name">Shopping List</string>
+    <string name="widget_description">Shows your pending shopping items</string>
+
+    <!-- Online/Presence -->
+    <string name="online_users">Online users</string>
+    <string name="user_online">%s is online</string>
+    <string name="users_online">%d users online</string>
+    <string name="you">You</string>
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
+
+    <!-- Offline Mode -->
+    <string name="offline_mode">Offline mode</string>
+    <string name="offline_banner">Offline - Changes will be saved locally</string>
+    <string name="syncing">Syncing…</string>
+    <string name="sync_complete">Sync complete</string>
+    <string name="sync_error">Sync error</string>
+    <string name="pending_changes">%d pending changes</string>
+
+    <!-- Export -->
+    <string name="export_list">Export list</string>
+    <string name="export_format">Export format</string>
+    <string name="export_pdf">PDF</string>
+    <string name="export_text">Plain text</string>
+    <string name="export_markdown">Markdown</string>
+    <string name="export_success">List exported successfully</string>
+    <string name="export_error">Export error</string>
+
+    <!-- Recurring Lists -->
+    <string name="recurring_list">Recurring list</string>
+    <string name="recurrence">Recurrence</string>
+    <string name="daily">Daily</string>
+    <string name="weekly">Weekly</string>
+    <string name="biweekly">Biweekly</string>
+    <string name="monthly">Monthly</string>
+    <string name="custom">Custom</string>
+    <string name="select_days">Select days</string>
+    <string name="next_occurrence">Next: %s</string>
+
+    <!-- Errors -->
+    <string name="error_network">Connection error. Check your internet.</string>
+    <string name="error_unknown">An unexpected error occurred</string>
+    <string name="error_auth">Authentication error</string>
+    <string name="error_permission">Permission denied</string>
+    <string name="error_save">Save error</string>
+    <string name="error_load">Error loading data</string>
+    <string name="error_analyze_prices">Error analyzing prices: %s</string>
+    <string name="error_process_receipt">Error processing receipt: %s</string>
+    <string name="error_save_price">Error saving price: %s</string>
+</resources>

@@ -14,5 +14,10 @@ data class ShoppingListEntity(
     val shareCode: String? = null,
     val isArchived: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    // Recurrence settings
+    val isRecurring: Boolean = false,
+    val recurrenceSettingsJson: String? = null, // Serialized RecurrenceSettings
+    val nextRecurrenceAt: Long? = null,
+    val lastResetAt: Long? = null
 )

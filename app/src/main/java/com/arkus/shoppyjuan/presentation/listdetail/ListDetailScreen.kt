@@ -9,17 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.arkus.shoppyjuan.data.barcode.BarcodeScannerManager
-import com.arkus.shoppyjuan.data.speech.VoiceInputManager
-import com.arkus.shoppyjuan.data.speech.VoiceInputState
-import com.arkus.shoppyjuan.domain.model.ListItem
+import com.arkus.shoppyjuan.navigation.Screen
 import com.arkus.shoppyjuan.presentation.components.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,15 +26,40 @@ fun ListDetailScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var showNotesSheet by remember { mutableStateOf(false) }
     var showOnlineUsersDialog by remember { mutableStateOf(false) }
+    var showShareDialog by remember { mutableStateOf(false) }
+
+    // Get current user info from ViewModel
+    val currentUserId = viewModel.currentUserId
+    val currentUserName = viewModel.currentUserName
+
+    // Show error snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            snackbarHostState.showSnackbar(error)
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = uiState.list?.name ?: "Lista de Compras",
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            text = uiState.list?.name ?: "Lista de Compras",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        if (uiState.items.isNotEmpty()) {
+                            Text(
+                                text = "${uiState.uncheckedItems.size} pendientes",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
@@ -48,6 +67,39 @@ fun ListDetailScreen(
                     }
                 },
                 actions = {
+                    // Price comparison button
+                    uiState.list?.id?.let { listId ->
+                        IconButton(
+                            onClick = {
+                                navController.navigate(Screen.PriceComparison.createRoute(listId))
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Euro,
+                                contentDescription = "Comparar precios"
+                            )
+                        }
+                    }
+
+                    // Supermarket mode button
+                    uiState.list?.id?.let { listId ->
+                        IconButton(
+                            onClick = {
+                                navController.navigate(Screen.SupermarketMode.createRoute(listId))
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = "Modo supermercado"
+                            )
+                        }
+                    }
+
+                    // Share button
+                    IconButton(onClick = { showShareDialog = true }) {
+                        Icon(Icons.Default.Share, contentDescription = "Compartir")
+                    }
+
                     // Notes button with badge
                     BadgedBox(
                         badge = {
@@ -60,8 +112,12 @@ fun ListDetailScreen(
                             Icon(Icons.Default.Comment, contentDescription = "Notas")
                         }
                     }
-                    IconButton(onClick = { viewModel.clearCheckedItems() }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Limpiar marcados")
+
+                    // Clear checked items
+                    if (uiState.checkedItems.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.clearCheckedItems() }) {
+                            Icon(Icons.Default.DeleteSweep, contentDescription = "Limpiar completados")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -73,44 +129,27 @@ fun ListDetailScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir artículo")
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Anadir articulo")
             }
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when {
                 uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
 
                 uiState.items.isEmpty() -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            Icons.Default.ShoppingBag,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Lista vacía",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = "Añade artículos a tu lista",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
+                    EmptyListContent(onAddClick = { showAddDialog = true })
                 }
 
                 else -> {
@@ -119,28 +158,52 @@ fun ListDetailScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Presence indicator
-                        if (uiState.onlineUsers.any { it.isOnline && it.userId != "current_user_id" }) {
+                        // Presence indicator - show when there are other online users
+                        val otherOnlineUsers = uiState.onlineUsers.filter {
+                            it.isOnline && it.userId != currentUserId
+                        }
+                        if (otherOnlineUsers.isNotEmpty()) {
                             item {
                                 PresenceChip(
                                     onlineUsers = uiState.onlineUsers,
-                                    currentUserId = "current_user_id", // TODO: Get from AuthRepository
+                                    currentUserId = currentUserId,
                                     onClick = { showOnlineUsersDialog = true },
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
                             }
                         }
 
+                        // Progress indicator
+                        if (uiState.items.isNotEmpty()) {
+                            item {
+                                val progress = uiState.checkedItems.size.toFloat() / uiState.items.size
+                                LinearProgressIndicator(
+                                    progress = { progress },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primaryContainer
+                                )
+                            }
+                        }
+
+                        // Unchecked items section
                         if (uiState.uncheckedItems.isNotEmpty()) {
                             item {
                                 Text(
                                     text = "Pendientes (${uiState.uncheckedItems.size})",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(bottom = 8.dp)
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(vertical = 8.dp)
                                 )
                             }
-                            items(uiState.uncheckedItems) { item ->
+
+                            items(
+                                items = uiState.uncheckedItems,
+                                key = { it.id }
+                            ) { item ->
                                 ItemCard(
                                     item = item,
                                     onCheckedChange = { checked ->
@@ -151,17 +214,28 @@ fun ListDetailScreen(
                             }
                         }
 
+                        // Checked items section
                         if (uiState.checkedItems.isNotEmpty()) {
                             item {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "Completados (${uiState.checkedItems.size})",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Completados (${uiState.checkedItems.size})",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
                             }
-                            items(uiState.checkedItems) { item ->
+
+                            items(
+                                items = uiState.checkedItems,
+                                key = { it.id }
+                            ) { item ->
                                 ItemCard(
                                     item = item,
                                     onCheckedChange = { checked ->
@@ -170,30 +244,39 @@ fun ListDetailScreen(
                                     onDelete = { viewModel.deleteItem(item.id) }
                                 )
                             }
+                        }
+
+                        // Bottom spacing for FAB
+                        item {
+                            Spacer(modifier = Modifier.height(80.dp))
                         }
                     }
                 }
             }
         }
 
+        // Add item dialog
         if (showAddDialog) {
             AddItemDialog(
                 onDismiss = { showAddDialog = false },
                 onAdd = { name, quantity, unit ->
                     viewModel.addItem(name, quantity, unit)
                     showAddDialog = false
-                }
+                },
+                voiceInputManager = viewModel.voiceInputManager,
+                barcodeScannerManager = viewModel.barcodeScannerManager
             )
         }
 
+        // Notes bottom sheet
         if (showNotesSheet) {
             NotesBottomSheet(
                 notes = uiState.notes,
-                currentUserId = "current_user_id", // TODO: Get from AuthRepository
-                currentUserName = "Usuario", // TODO: Get from AuthRepository
+                currentUserId = currentUserId,
+                currentUserName = currentUserName,
                 onDismiss = { showNotesSheet = false },
                 onAddNote = { content ->
-                    viewModel.addNote(content, "current_user_id", "Usuario")
+                    viewModel.addNote(content)
                 },
                 onDeleteNote = { noteId ->
                     viewModel.deleteNote(noteId)
@@ -201,62 +284,21 @@ fun ListDetailScreen(
             )
         }
 
+        // Online users dialog
         if (showOnlineUsersDialog) {
             OnlineUsersDialog(
                 onlineUsers = uiState.onlineUsers,
-                currentUserId = "current_user_id", // TODO: Get from AuthRepository
+                currentUserId = currentUserId,
                 onDismiss = { showOnlineUsersDialog = false }
             )
         }
-    }
-}
 
-@Composable
-fun ItemCard(
-    item: ListItem,
-    onCheckedChange: (Boolean) -> Unit,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = item.checked,
-                onCheckedChange = onCheckedChange
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "${item.emoji ?: ""} ${item.name}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None
-                )
-                if (item.quantity > 0 || item.unit != null) {
-                    Text(
-                        text = "${item.quantity}${item.unit ?: ""}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                item.category?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Eliminar",
-                    tint = MaterialTheme.colorScheme.error
+        // Share dialog
+        if (showShareDialog) {
+            uiState.list?.let { list ->
+                ShareListDialog(
+                    list = list,
+                    onDismiss = { showShareDialog = false }
                 )
             }
         }
@@ -264,127 +306,46 @@ fun ItemCard(
 }
 
 @Composable
-fun AddItemDialog(
-    onDismiss: () -> Unit,
-    onAdd: (String, Double, String?) -> Unit,
-    voiceInputManager: VoiceInputManager = hiltViewModel<ListDetailViewModel>().voiceInputManager,
-    barcodeScannerManager: BarcodeScannerManager = hiltViewModel<ListDetailViewModel>().barcodeScannerManager
+private fun EmptyListContent(
+    onAddClick: () -> Unit
 ) {
-    var itemName by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("1") }
-    var unit by remember { mutableStateOf("") }
-    var showBarcodeScanner by remember { mutableStateOf(false) }
-    var voiceInputState by remember { mutableStateOf<VoiceInputState>(VoiceInputState.Idle) }
-
-    if (showBarcodeScanner) {
-        BarcodeScannerScreen(
-            scannerManager = barcodeScannerManager,
-            onBarcodeScanned = { barcode ->
-                itemName = barcode
-                showBarcodeScanner = false
-            },
-            onClose = { showBarcodeScanner = false }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            Icons.Default.ShoppingBag,
+            contentDescription = null,
+            modifier = Modifier.size(80.dp),
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
         )
-    } else {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Añadir Artículo") },
-            text = {
-                Column {
-                    // Input field con iconos de voz y barcode
-                    OutlinedTextField(
-                        value = itemName,
-                        onValueChange = { itemName = it },
-                        label = { Text("Nombre del artículo") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
-                            Row {
-                                // Voice input button
-                                IconButton(
-                                    onClick = {
-                                        voiceInputState = VoiceInputState.Listening
-                                        LaunchedEffect(Unit) {
-                                            voiceInputManager.startListening().collect { state ->
-                                                voiceInputState = state
-                                                if (state is VoiceInputState.Result) {
-                                                    itemName = state.text
-                                                }
-                                            }
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Default.Mic,
-                                        contentDescription = "Entrada por voz",
-                                        tint = if (voiceInputState is VoiceInputState.Listening)
-                                            MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
 
-                                // Barcode scanner button
-                                IconButton(onClick = { showBarcodeScanner = true }) {
-                                    Icon(
-                                        Icons.Default.QrCodeScanner,
-                                        contentDescription = "Escanear código"
-                                    )
-                                }
-                            }
-                        }
-                    )
+        Spacer(modifier = Modifier.height(24.dp))
 
-                    if (voiceInputState is VoiceInputState.Listening) {
-                        Text(
-                            text = "Escuchando...",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = quantity,
-                            onValueChange = { quantity = it },
-                            label = { Text("Cantidad") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = unit,
-                            onValueChange = { unit = it },
-                            label = { Text("Unidad") },
-                            placeholder = { Text("kg, ud, l...") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (itemName.isNotBlank()) {
-                            val qty = quantity.toDoubleOrNull() ?: 1.0
-                            val unitValue = if (unit.isBlank()) null else unit
-                            onAdd(itemName, qty, unitValue)
-                        }
-                    },
-                    enabled = itemName.isNotBlank()
-                ) {
-                    Text("Añadir")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
-                }
-            }
+        Text(
+            text = "Lista vacia",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Anade articulos a tu lista de compras",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(onClick = onAddClick) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Anadir primer articulo")
+        }
     }
 }
