@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShoppyJuan</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_lists">Listas</string>
+    <string name="nav_recipes">Recetas</string>
+    <string name="nav_favorites">Favoritos</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- Shopping Lists -->
+    <string name="my_lists">Mis Listas</string>
+    <string name="new_list">Nueva Lista</string>
+    <string name="list_name">Nombre de la lista</string>
+    <string name="add_item">Añadir artículo</string>
+    <string name="item_name">Nombre del artículo</string>
+    <string name="quantity">Cantidad</string>
+    <string name="unit">Unidad</string>
+    <string name="category">Categoría</string>
+    <string name="notes">Notas</string>
+    <string name="share_list">Compartir lista</string>
+    <string name="delete_list">Eliminar lista</string>
+    <string name="archive_list">Archivar lista</string>
+    <string name="clear_checked">Limpiar marcados</string>
+    <string name="clear_all">Limpiar todo</string>
+
+    <!-- Items -->
+    <string name="item_checked">Artículo marcado</string>
+    <string name="item_unchecked">Artículo desmarcado</string>
+    <string name="edit_item">Editar artículo</string>
+    <string name="delete_item">Eliminar artículo</string>
+
+    <!-- Recipes -->
+    <string name="browse_recipes">Explorar Recetas</string>
+    <string name="my_recipes">Mis Recetas</string>
+    <string name="add_to_list">Añadir a lista</string>
+    <string name="ingredients">Ingredientes</string>
+    <string name="instructions">Instrucciones</string>
+
+    <!-- Auth -->
+    <string name="login">Iniciar Sesión</string>
+    <string name="register">Registrarse</string>
+    <string name="email">Email</string>
+    <string name="password">Contraseña</string>
+    <string name="logout">Cerrar Sesión</string>
+
+    <!-- Common -->
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Eliminar</string>
+    <string name="edit">Editar</string>
+    <string name="share">Compartir</string>
+    <string name="search">Buscar</string>
+    <string name="loading">Cargando…</string>
+    <string name="error">Error</string>
+    <string name="retry">Reintentar</string>
+    <string name="empty_list">Lista vacía</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Actualizaciones de listas</string>
+    <string name="notification_channel_desc">Notificaciones de cambios en listas compartidas</string>
+</resources>
