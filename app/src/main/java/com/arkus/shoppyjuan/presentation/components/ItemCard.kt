@@ -2,11 +2,15 @@ package com.arkus.shoppyjuan.presentation.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Note
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,9 +27,11 @@ fun ItemCard(
     item: ListItem,
     onCheckedChange: (Boolean) -> Unit,
     onDelete: () -> Unit,
+    onEdit: () -> Unit,
+    onAddNote: () -> Unit,
+    onCategoryChange: () -> Unit,
     modifier: Modifier = Modifier,
-    onEdit: (() -> Unit)? = null,
-    showEditButton: Boolean = false
+    onAssign: (() -> Unit)? = null
 ) {
     val alpha by animateFloatAsState(
         targetValue = if (item.checked) 0.6f else 1f,
@@ -40,6 +46,8 @@ fun ItemCard(
         },
         label = "item_background"
     )
+
+    var showMenu by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
@@ -60,7 +68,11 @@ fun ItemCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { showMenu = true }
+            ) {
                 // Name with emoji
                 Text(
                     text = buildString {
@@ -107,41 +119,93 @@ fun ItemCard(
                 item.note?.let { note ->
                     if (note.isNotBlank()) {
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = note,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f),
-                            maxLines = 1
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Note,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = note,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f),
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }
 
-            // Action buttons
-            Row {
-                if (showEditButton && onEdit != null) {
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = "Editar",
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
+            // Menu button
+            Box {
                 IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(40.dp)
+                    onClick = { showMenu = true }
                 ) {
                     Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Eliminar",
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp)
+                        Icons.Default.MoreVert,
+                        contentDescription = "Opciones",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Editar") },
+                        onClick = {
+                            onEdit()
+                            showMenu = false
+                        },
+                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(if (item.note.isNullOrBlank()) "Añadir nota" else "Editar nota") },
+                        onClick = {
+                            onAddNote()
+                            showMenu = false
+                        },
+                        leadingIcon = { Icon(Icons.Default.Note, contentDescription = null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Cambiar categoría") },
+                        onClick = {
+                            onCategoryChange()
+                            showMenu = false
+                        },
+                        leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) }
+                    )
+
+                    if (onAssign != null) {
+                        DropdownMenuItem(
+                            text = { Text("Asignar") },
+                            onClick = {
+                                onAssign.invoke()
+                                showMenu = false
+                            },
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+                        )
+                    }
+
+                    DropdownMenuItem(
+                        text = { Text("Eliminar") },
+                        onClick = {
+                            onDelete()
+                            showMenu = false
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        colors = MenuDefaults.itemColors(
+                            textColor = MaterialTheme.colorScheme.error
+                        )
                     )
                 }
             }

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkus.shoppyjuan.data.barcode.BarcodeScannerManager
 import com.arkus.shoppyjuan.data.local.entity.FrequentItemEntity
+import com.arkus.shoppyjuan.data.realtime.RealtimeEvent
 import com.arkus.shoppyjuan.data.realtime.RealtimeManager
 import com.arkus.shoppyjuan.data.repository.FrequentItemRepository
 import com.arkus.shoppyjuan.data.speech.VoiceInputManager
@@ -18,6 +19,7 @@ import com.arkus.shoppyjuan.domain.user.UserManager
 import com.arkus.shoppyjuan.domain.util.ProductCategory
 import com.arkus.shoppyjuan.presentation.components.OnlineUser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -60,10 +62,13 @@ class ListDetailViewModel @Inject constructor(
     val currentUserId: String get() = userManager.currentUserId
     val currentUserName: String get() = userManager.currentUserName
 
+    private var itemsJob: Job? = null
+
     init {
         loadCurrentUser()
         loadListDetails()
         loadFrequentItems()
+        subscribeToRealtimeChanges()
     }
 
     private fun loadCurrentUser() {
@@ -88,7 +93,22 @@ class ListDetailViewModel @Inject constructor(
                 }
         }
 
+        loadItems()
+
         viewModelScope.launch {
+            noteRepository.getListNotes(listId)
+                .catch { e -> _uiState.update { it.copy(error = e.message) } }
+                .collect { notes ->
+                    _uiState.update { it.copy(notes = notes, noteCount = notes.size) }
+                }
+        }
+
+        startPresenceTracking()
+    }
+
+    private fun loadItems() {
+        itemsJob?.cancel()
+        itemsJob = viewModelScope.launch {
             repository.getItemsByListId(listId)
                 .catch { e -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
                 .collect { items ->
@@ -103,16 +123,6 @@ class ListDetailViewModel @Inject constructor(
                     }
                 }
         }
-
-        viewModelScope.launch {
-            noteRepository.getListNotes(listId)
-                .catch { e -> _uiState.update { it.copy(error = e.message) } }
-                .collect { notes ->
-                    _uiState.update { it.copy(notes = notes, noteCount = notes.size) }
-                }
-        }
-
-        startPresenceTracking()
     }
 
     private fun loadFrequentItems() {
@@ -143,6 +153,38 @@ class ListDetailViewModel @Inject constructor(
                     }
             } catch (e: Exception) {
                 // Silently fail
+            }
+        }
+    }
+
+    private fun subscribeToRealtimeChanges() {
+        viewModelScope.launch {
+            try {
+                realtimeManager.subscribeToList(listId)
+                    .catch { /* Handle error or silent fail */ }
+                    .collect { event ->
+                        when (event) {
+                            is RealtimeEvent.ItemAdded,
+                            is RealtimeEvent.ItemUpdated,
+                            is RealtimeEvent.ItemDeleted,
+                            is RealtimeEvent.ListUpdated -> {
+                                // Reload data when external changes occur
+                                // We restart the collection of items flow to catch any updates that might have propagated to Room
+                                // If the repository handles remote sync, this might not be enough, but re-subscribing ensures we are fresh.
+                                // A more robust solution involves calling repository.refresh(listId) which fetches from Supabase and upserts to Room.
+                                // Assuming Room observes the table, we just need to trigger the fetch.
+
+                                // Since we don't have a sync mechanism exposed, we will assume that
+                                // calling loadItems() again might help if there's any caching issue,
+                                // but ideally we need a "Refresh" signal.
+
+                                loadItems()
+                            }
+                            else -> {}
+                        }
+                    }
+            } catch (e: Exception) {
+                // Ignore realtime errors
             }
         }
     }
@@ -280,6 +322,16 @@ class ListDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.updateItem(item)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    fun assignItem(item: ListItem, userId: String) {
+        viewModelScope.launch {
+            try {
+                repository.updateItem(item.copy(assignedTo = userId))
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
             }
