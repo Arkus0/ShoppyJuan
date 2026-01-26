@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.arkus.shoppyjuan.domain.model.ListItem
 import com.arkus.shoppyjuan.navigation.Screen
 import com.arkus.shoppyjuan.presentation.components.*
 
@@ -27,6 +28,12 @@ fun ListDetailScreen(
     var showNotesSheet by remember { mutableStateOf(false) }
     var showOnlineUsersDialog by remember { mutableStateOf(false) }
     var showShareDialog by remember { mutableStateOf(false) }
+
+    // States for Item Context Actions
+    var itemToEdit by remember { mutableStateOf<ListItem?>(null) }
+    var itemToAddNote by remember { mutableStateOf<ListItem?>(null) }
+    var itemToChangeCategory by remember { mutableStateOf<ListItem?>(null) }
+    var itemToAssign by remember { mutableStateOf<ListItem?>(null) }
 
     // Get current user info from ViewModel
     val currentUserId = viewModel.currentUserId
@@ -209,7 +216,11 @@ fun ListDetailScreen(
                                     onCheckedChange = { checked ->
                                         viewModel.toggleItemChecked(item.id, checked)
                                     },
-                                    onDelete = { viewModel.deleteItem(item.id) }
+                                    onDelete = { viewModel.deleteItem(item.id) },
+                                    onEdit = { itemToEdit = item },
+                                    onAddNote = { itemToAddNote = item },
+                                    onCategoryChange = { itemToChangeCategory = item },
+                                    onAssign = { itemToAssign = item }
                                 )
                             }
                         }
@@ -241,7 +252,11 @@ fun ListDetailScreen(
                                     onCheckedChange = { checked ->
                                         viewModel.toggleItemChecked(item.id, checked)
                                     },
-                                    onDelete = { viewModel.deleteItem(item.id) }
+                                    onDelete = { viewModel.deleteItem(item.id) },
+                                    onEdit = { itemToEdit = item },
+                                    onAddNote = { itemToAddNote = item },
+                                    onCategoryChange = { itemToChangeCategory = item },
+                                    onAssign = { itemToAssign = item }
                                 )
                             }
                         }
@@ -265,6 +280,55 @@ fun ListDetailScreen(
                 },
                 voiceInputManager = viewModel.voiceInputManager,
                 barcodeScannerManager = viewModel.barcodeScannerManager
+            )
+        }
+
+        // Edit Item Dialog
+        itemToEdit?.let { item ->
+            EditItemDialog(
+                item = item,
+                onDismiss = { itemToEdit = null },
+                onConfirm = { name, quantity, unit ->
+                    viewModel.updateItem(item.copy(name = name, quantity = quantity, unit = unit))
+                    itemToEdit = null
+                }
+            )
+        }
+
+        // Item Note Dialog
+        itemToAddNote?.let { item ->
+            ItemNoteDialog(
+                currentNote = item.note,
+                onDismiss = { itemToAddNote = null },
+                onConfirm = { note ->
+                    viewModel.updateItem(item.copy(note = note))
+                    itemToAddNote = null
+                }
+            )
+        }
+
+        // Category Selection Dialog
+        itemToChangeCategory?.let { item ->
+            CategorySelectionDialog(
+                currentCategory = item.category,
+                onDismiss = { itemToChangeCategory = null },
+                onCategorySelected = { category ->
+                    viewModel.updateItem(item.copy(category = category.label, emoji = category.emoji))
+                    itemToChangeCategory = null
+                }
+            )
+        }
+
+        // Assign Dialog
+        itemToAssign?.let { item ->
+            val otherUsers = uiState.onlineUsers.filter { it.userId != currentUserId }
+            AssignItemDialog(
+                users = otherUsers,
+                onDismiss = { itemToAssign = null },
+                onUserSelected = { userId ->
+                    viewModel.assignItem(item, userId)
+                    itemToAssign = null
+                }
             )
         }
 

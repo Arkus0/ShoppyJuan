@@ -5,10 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.arkus.shoppyjuan.data.auth.AuthRepository
 import com.arkus.shoppyjuan.data.auth.AuthResult
 import com.arkus.shoppyjuan.data.location.LocationManager
+import com.arkus.shoppyjuan.data.repository.FeedbackRepository
 import com.arkus.shoppyjuan.domain.settings.AppLanguage
 import com.arkus.shoppyjuan.domain.settings.AppTheme
 import com.arkus.shoppyjuan.domain.settings.UserPreferencesManager
 import com.arkus.shoppyjuan.domain.user.UserManager
+import com.arkus.shoppyjuan.presentation.components.FeedbackType
+import com.arkus.shoppyjuan.presentation.components.FeedbackRating
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +37,7 @@ data class ProfileUiState(
     val passwordChangeSuccess: Boolean = false,
     val signedOut: Boolean = false,
     val error: String? = null,
+    val feedbackSent: Boolean = false,
     // Preferences
     val language: AppLanguage = AppLanguage.SPANISH,
     val theme: AppTheme = AppTheme.SYSTEM,
@@ -47,7 +51,8 @@ class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userManager: UserManager,
     private val userPreferencesManager: UserPreferencesManager,
-    private val locationManager: LocationManager
+    private val locationManager: LocationManager,
+    private val feedbackRepository: FeedbackRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -284,6 +289,25 @@ class ProfileViewModel @Inject constructor(
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
         }
+    }
+
+    fun sendFeedback(type: FeedbackType, rating: FeedbackRating?, description: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val userId = _uiState.value.profile?.id
+
+            val result = feedbackRepository.sendFeedback(type, rating, description, userId)
+
+            result.onSuccess {
+                _uiState.update { it.copy(isLoading = false, feedbackSent = true) }
+            }.onFailure { e ->
+                _uiState.update { it.copy(isLoading = false, error = "Error enviando feedback: ${e.message}") }
+            }
+        }
+    }
+
+    fun clearFeedbackSent() {
+        _uiState.update { it.copy(feedbackSent = false) }
     }
 
     fun signOut() {

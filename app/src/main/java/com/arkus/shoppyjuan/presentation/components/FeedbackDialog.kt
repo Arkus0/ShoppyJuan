@@ -1,7 +1,5 @@
 package com.arkus.shoppyjuan.presentation.components
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -12,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
@@ -49,9 +46,8 @@ enum class FeedbackRating(val emoji: String, val description: String) {
 @Composable
 fun FeedbackDialog(
     onDismiss: () -> Unit,
-    onSubmitEmail: (FeedbackType, FeedbackRating?, String) -> Unit
+    onSubmit: (FeedbackType, FeedbackRating?, String) -> Unit
 ) {
-    val context = LocalContext.current
     var selectedType by remember { mutableStateOf(FeedbackType.GENERAL) }
     var selectedRating by remember { mutableStateOf<FeedbackRating?>(null) }
     var feedbackText by remember { mutableStateOf("") }
@@ -94,8 +90,7 @@ fun FeedbackDialog(
             } else {
                 Button(
                     onClick = {
-                        onSubmitEmail(selectedType, selectedRating, feedbackText)
-                        onDismiss()
+                        onSubmit(selectedType, selectedRating, feedbackText)
                     },
                     enabled = feedbackText.isNotBlank()
                 ) {
@@ -271,41 +266,5 @@ private fun FeedbackContent(
             },
             maxLines = 6
         )
-    }
-}
-
-/**
- * Creates an email intent for sending feedback
- */
-fun createFeedbackEmailIntent(
-    type: FeedbackType,
-    rating: FeedbackRating?,
-    text: String,
-    appVersion: String = "1.0.0"
-): Intent {
-    val subject = when (type) {
-        FeedbackType.BUG -> "[ShoppyJuan Bug] Error reportado"
-        FeedbackType.FEATURE -> "[ShoppyJuan Feature] Sugerencia"
-        FeedbackType.GENERAL -> "[ShoppyJuan] Feedback general"
-    }
-
-    val ratingText = rating?.let { "\n\nCalificacion: ${it.emoji} ${it.description}" } ?: ""
-    val body = """
-        |Tipo: ${type.title}
-        |Version de la app: $appVersion
-        |$ratingText
-        |
-        |Comentario:
-        |$text
-        |
-        |---
-        |Enviado desde ShoppyJuan Android
-    """.trimMargin()
-
-    return Intent(Intent.ACTION_SENDTO).apply {
-        data = Uri.parse("mailto:")
-        putExtra(Intent.EXTRA_EMAIL, arrayOf("feedback@shoppyjuan.app"))
-        putExtra(Intent.EXTRA_SUBJECT, subject)
-        putExtra(Intent.EXTRA_TEXT, body)
     }
 }
